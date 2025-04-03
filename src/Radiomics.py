@@ -1,47 +1,32 @@
-from __future__ import print_function
-import os
-import radiomics
-from radiomics import featureextractor
+from Imports import *
 
-import collections
-import csv
-import logging
-import os
+def get_singleImage_radiomics(image_path, label_path, params=None, image_types=None, features=None):
 
-import SimpleITK as sitk
+    if params is None:
+        params = {}
+        params['binWidth'] = 25
+        params['verbose'] = True   
+    else:
+        extractor = featureextractor.RadiomicsFeatureExtractor(**params)
 
+    if image_types is not None:
+        extractor.enableInputImages(**image_types)
+    else:
+        extractor.enableAllImageTypes()
+    if features is not None:
+        extractor.enableFeatures(**features)    
+    else:
+        extractor.enableAllFeatures()
 
-def main():
-    testCase = '100004_T0'
-    dataDir = '//10.5.38.120/BIT-UPM-projects/NODULES/SCRATCH_STUDENTS/examples/benign/100004'
-    image_path = os.path.join(dataDir, testCase + '.nrrd')
-    label_path = os.path.join(dataDir, testCase + '_seg.nrrd')
-
-    params = {}
-    params['binWidth'] = 20
-    params['verbose'] = True
-
-    extractor = featureextractor.RadiomicsFeatureExtractor(**params)
-    extractor.enableAllImageTypes()
     print('Extraction parameters:\n\t', extractor.settings)
     print('Enabled filters:\n\t', extractor.enabledImagetypes)
     print('Enabled features:\n\t', extractor.enabledFeatures)
 
-    result = extractor.execute(image_path, label_path)
-    print(len(result))
-    # for key, value in result.items():
-    #     print('\t', key, ':', value)
+    return extractor.execute(image_path, label_path)
+    
 
-def batch_processing():
-    outPath = r'C:/dev/LungNodulesDetection/data'
-
-    inputCSV = os.path.join(outPath, 'radiomics.csv')
-    outputFilepath = os.path.join(outPath, 'radiomics_features.csv')
-    progress_filename = os.path.join(outPath, 'pyrad_log.txt')
-    #params = os.path.join(outPath, 'exampleSettings', 'Params.yaml')
-    params = {}
-    params['binWidth'] = 20
-    params['verbose'] = True
+def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None):    
+    csv.field_size_limit(10**6)
 
     # Configure logging
     rLogger = logging.getLogger('radiomics')
@@ -55,7 +40,7 @@ def batch_processing():
     logger = rLogger.getChild('batch')
 
     # Set verbosity level for output to stderr (default level = WARNING)
-    radiomics.setVerbosity(logging.INFO)
+    radiomics.setVerbosity(20)
 
     logger.info('pyradiomics version: %s', radiomics.__version__)
     logger.info('Loading CSV')
@@ -71,23 +56,28 @@ def batch_processing():
     logger.info('Loading Done')
     logger.info('Patients: %d', len(flists))
 
-    if len(params)>0:
+    
+    if params is None:
+        params = {}
+        params['binWidth'] = 25
+        params['verbose'] = True
         extractor = featureextractor.RadiomicsFeatureExtractor(**params)
-    else:  # Parameter file not found, use hardcoded settings instead
-        settings = {}
-        settings['binWidth'] = 25
-        settings['resampledPixelSpacing'] = None  # [3,3,3]
-        settings['interpolator'] = sitk.sitkBSpline
-        settings['enableCExtensions'] = True
-
-        extractor = featureextractor.RadiomicsFeatureExtractor(**settings)
-        # extractor.enableInputImages(wavelet= {'level': 2})
+        extractor.enableAllImageTypes()
+        extractor.enableAllFeatures()
+    elif os.path.isfile(params):
+        extractor = featureextractor.RadiomicsFeatureExtractor(params)
+    else:
+        extractor = featureextractor.RadiomicsFeatureExtractor(**params)
+        extractor.enableAllImageTypes()
+        extractor.enableAllFeatures()
+    
 
     logger.info('Enabled input images types: %s', extractor.enabledImagetypes)
     logger.info('Enabled features: %s', extractor.enabledFeatures)
     logger.info('Current settings: %s', extractor.settings)
 
     headers = None
+    amount = 0
 
     for idx, entry in enumerate(flists, start=1):
 
@@ -109,6 +99,9 @@ def batch_processing():
 
             try:
                 featureVector.update(extractor.execute(imageFilepath, maskFilepath, label))
+                amount = len(featureVector)
+                logger.info("Extracted %d features", amount)
+                logger.info("Features: %s", featureVector.keys())
 
                 with open(outputFilepath, 'a') as outputFile:
                     writer = csv.writer(outputFile, lineterminator='\n')
@@ -123,6 +116,4 @@ def batch_processing():
             except Exception:
                 logger.error('FEATURE EXTRACTION FAILED', exc_info=True)
 
-batch_processing()
-#main()
-
+    return amount
