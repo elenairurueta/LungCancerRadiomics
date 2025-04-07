@@ -39,7 +39,6 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
     # Initialize logging for batch log messages
     logger = rLogger.getChild('batch')
 
-    # Set verbosity level for output to stderr (default level = WARNING)
     radiomics.setVerbosity(20)
 
     logger.info('pyradiomics version: %s', radiomics.__version__)
@@ -79,6 +78,8 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
     headers = None
     amount = 0
 
+    radiomics_array = []
+
     for idx, entry in enumerate(flists, start=1):
 
         logger.info("(%d/%d) Processing Patient (Image: %s, Mask: %s)", idx, len(flists), entry['Image'], entry['Mask'])
@@ -91,7 +92,7 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
             label = int(label)
         else:
             label = None
-
+        
         if (imageFilepath is not None) and (maskFilepath is not None):
             featureVector = collections.OrderedDict(entry)
             featureVector['Image'] = os.path.basename(imageFilepath)
@@ -99,21 +100,24 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
 
             try:
                 featureVector.update(extractor.execute(imageFilepath, maskFilepath, label))
+                radiomics_array.append(dict(featureVector))
                 amount = len(featureVector)
                 logger.info("Extracted %d features", amount)
                 logger.info("Features: %s", featureVector.keys())
+                try:
+                    with open(outputFilepath, 'a') as outputFile:
+                        writer = csv.writer(outputFile, lineterminator='\n')
+                        if headers is None:
+                            headers = list(featureVector.keys())
+                            writer.writerow(headers)
 
-                with open(outputFilepath, 'a') as outputFile:
-                    writer = csv.writer(outputFile, lineterminator='\n')
-                    if headers is None:
-                        headers = list(featureVector.keys())
-                        writer.writerow(headers)
-
-                    row = []
-                    for h in headers:
-                        row.append(featureVector.get(h, "N/A"))
-                    writer.writerow(row)
+                        row = []
+                        for h in headers:
+                            row.append(featureVector.get(h, "N/A"))
+                        writer.writerow(row)
+                except Exception:
+                    logger.error('CSV WRITE FAILED', exc_info=True)
             except Exception:
                 logger.error('FEATURE EXTRACTION FAILED', exc_info=True)
 
-    return amount
+    return amount, radiomics_array

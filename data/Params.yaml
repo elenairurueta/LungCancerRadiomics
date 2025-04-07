@@ -1,19 +1,22 @@
 setting:
   binWidth: 25
   label: 1
-  #interpolator: 'sitkBSpline' # This is an enumerated value, here None is not allowed
-  #resampledPixelSpacing: # This disables resampling, as it is interpreted as None, to enable it, specify spacing in x, y, z as [x, y , z]
+  interpolator: 'sitkBSpline' # This is an enumerated value, here None is not allowed
+  resampledPixelSpacing: [1, 1, 1] # This disables resampling, as it is interpreted as None, to enable it, specify spacing in x, y, z as [x, y , z]
+  resegmentRange: [-600, 400]
   #weightingNorm: # If no value is specified, it is interpreted as None
 
 # Image types to use: "Original" for unfiltered image, for possible filters, see documentation.
 imageType:
   Original: {} # for dictionaries / mappings, None values are not allowed, '{}' is interpreted as an empty dictionary
   Wavelet: 
-    wavelet: 'coif1'
+    #wavelet: 'coif1'
     level: 1
     # for wavelet, the level is the number of decomposition levels, and the wavelet is the name of the wavelet.
   LoG: 
-    sigma: [1, 2, 3]
+    sigma: [1]
+  SquareRoot: {} # for square, no parameters are needed
+  Gradient: {} # for gradient, no parameters are needed
   # Logarithm: {} # for logarithm, no parameters are needed
 
 # Featureclasses, from which features must be calculated. If a featureclass is not mentioned, no features are calculated
