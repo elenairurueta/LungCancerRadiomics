@@ -24,7 +24,7 @@ def main():
     print('Radiomics count:', radiomics_count)
     filtered_features = pearson_correlation(radiomics_features, outputFilteringFilepath)
     print('Filtered features:', filtered_features)
-    selected_features = anova_ftest(filtered_features, target=np.ones(7, dtype=int), outPath=outputSelectionFilepath)
+    selected_features = anova_ftest(filtered_features, outPath=outputSelectionFilepath, k=50)
     print('Selected features:', selected_features)
 
 if __name__ == "__main__":

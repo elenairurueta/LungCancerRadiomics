@@ -1,4 +1,5 @@
 from Imports import *
+from scipy.stats import shapiro, levene
 
 def pearson_correlation(features, outPath = ''):
     """
@@ -7,7 +8,7 @@ def pearson_correlation(features, outPath = ''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
     
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
 
     features_excluded = features.drop(columns=exclude_columns, errors='ignore')
 
@@ -33,26 +34,29 @@ def pearson_correlation(features, outPath = ''):
 
 
 
-def anova_ftest(features, target, outPath='', k=10):
+def anova_ftest(features, outPath='', k=10):
     """
     Filtra las K características principales según el valor F de ANOVA.
     """
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
 
-    features = features.drop(columns=exclude_columns, errors='ignore')
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
     # Inicializa un DataFrame para almacenar los resultados
     results = pd.DataFrame(columns=['Feature', 'F-statistic', 'p-value'])
 
+    rows = []
     # Realiza la prueba ANOVA para cada característica
-    for column in features.columns:
-        groups = [features[column][np.array(target) == label] for label in np.unique(target)]
+    for column in filtered_features.columns:
+        groups = [filtered_features[column][np.array(features['Label']) == label] for label in np.unique(features['Label'])]
+        if check_anova_assumptions(groups) == False:
+            continue
         f_statistic, p_value = f_oneway(*groups)
-        results = results.append({'Feature': column, 'F-statistic': f_statistic, 'p-value': p_value}, ignore_index=True)
-
+        rows.append({'Feature': column, 'F-statistic': f_statistic, 'p-value': p_value})
+    results = pd.concat([results, pd.DataFrame(rows)], ignore_index=True)
     # Ordena las características por el valor F en orden descendente
     results = results.sort_values(by='F-statistic', ascending=False)
 
@@ -60,9 +64,32 @@ def anova_ftest(features, target, outPath='', k=10):
     top_features = results.head(k)['Feature'].tolist()
     
     with open(outPath, "a") as log_file:
-        log_file.write(f"\n\nCantidad inicial de características: {len(features.columns)}\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
         log_file.write(f"Cantidad final de características: {len(top_features)}\n")
         log_file.write("Características seleccionadas:\n")
-        log_file.write("\n".join(top_features) + "\n")
+        for feature in top_features:
+            f_statistic = results.loc[results['Feature'] == feature, 'F-statistic'].values[0]
+            log_file.write(f"{feature}: F-statistic = {f_statistic:.2f}\n")
+    return features[top_features.append(exclude_columns)]
 
-    return features[top_features]
+
+def check_anova_assumptions(groups):
+    """
+    Verifica las suposiciones de ANOVA:
+    - Normalidad: Prueba de Shapiro-Wilk.
+    - Homogeneidad de varianza: Prueba de Levene.
+    """
+    # Normalidad: Shapiro-Wilk test
+    for group in groups:
+        if len(group) < 3:  # Shapiro-Wilk requires at least 3 samples
+            return False
+        stat, p_value = shapiro(group)
+        if p_value < 0.05:  # Reject null hypothesis of normality
+            return False
+
+    # Homogeneidad de varianza: Levene's test
+    stat, p_value = levene(*groups)
+    if p_value < 0.05:  # Reject null hypothesis of equal variances
+        return False
+
+    return True

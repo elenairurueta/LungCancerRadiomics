@@ -97,9 +97,10 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
             featureVector = collections.OrderedDict(entry)
             featureVector['Image'] = os.path.basename(imageFilepath)
             featureVector['Mask'] = os.path.basename(maskFilepath)
-
+            featureVector['Label'] = label
+            
             try:
-                featureVector.update(extractor.execute(imageFilepath, maskFilepath, label))
+                featureVector.update(extractor.execute(imageFilepath, maskFilepath, 1))
                 radiomics_array.append(dict(featureVector))
                 amount = len(featureVector)
                 logger.info("Extracted %d features", amount)
