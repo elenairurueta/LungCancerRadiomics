@@ -32,8 +32,6 @@ def pearson_correlation(features, outPath = ''):
 
     return filtered_features
 
-
-
 def anova_ftest(features, outPath='', k=10):
     """
     Filtra las K características principales según el valor F de ANOVA.
@@ -70,8 +68,10 @@ def anova_ftest(features, outPath='', k=10):
         for feature in top_features:
             f_statistic = results.loc[results['Feature'] == feature, 'F-statistic'].values[0]
             log_file.write(f"{feature}: F-statistic = {f_statistic:.2f}\n")
-    return features[top_features.append(exclude_columns)]
+    
+    features_all = top_features + exclude_columns
 
+    return features[features_all]
 
 def check_anova_assumptions(groups):
     """

@@ -23,9 +23,8 @@ def get_singleImage_radiomics(image_path, label_path, params=None, image_types=N
     print('Enabled features:\n\t', extractor.enabledFeatures)
 
     return extractor.execute(image_path, label_path)
-    
-
-def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None):    
+  
+def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):    
     csv.field_size_limit(10**6)
 
     # Configure logging
@@ -106,7 +105,7 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
                 logger.info("Extracted %d features", amount)
                 logger.info("Features: %s", featureVector.keys())
                 try:
-                    with open(outputFilepath, 'a') as outputFile:
+                    with open(outPath, 'a') as outputFile:
                         writer = csv.writer(outputFile, lineterminator='\n')
                         if headers is None:
                             headers = list(featureVector.keys())
@@ -122,3 +121,19 @@ def get_batch_radiomics(inputCSV, outputFilepath, progress_filename, params=None
                 logger.error('FEATURE EXTRACTION FAILED', exc_info=True)
 
     return amount, radiomics_array
+
+def read_radiomics_csv(csv_filepath):
+    """
+    Lee el archivo CSV generado por get_batch_radiomics y devuelve la cantidad de filas y las características como un DataFrame.
+    Convierte columnas con datos numéricos almacenados como cadenas en tipos numéricos.
+    """
+    try:
+        features_df = pd.read_csv(csv_filepath)
+        amount = len(features_df.columns)
+        
+        features_df = features_df.apply(pd.to_numeric, errors='ignore')
+        
+        return amount, features_df
+    except Exception as e:
+        print(f"Error al leer el archivo CSV: {e}")
+        return 0, None

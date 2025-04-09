@@ -359,7 +359,7 @@ INFO:radiomics.featureextractor: Calculating features with label: 1
 INFO:radiomics.featureextractor: Loading image and mask
 ERROR:radiomics.batch: FEATURE EXTRACTION FAILED
 Traceback (most recent call last):
-  File "C:\dev\LungCancerRadiomics\src\Radiomics.py", line 103, in get_batch_radiomics
+  File "C:\dev\LungCancerRadiomics\src\Radiomics.py", line 102, in get_batch_radiomics
     featureVector.update(extractor.execute(imageFilepath, maskFilepath, 1))
   File "c:\Users\elena\.conda\envs\LungNodulesRadiomics\lib\site-packages\radiomics\featureextractor.py", line 272, in execute
     image, mask = self.loadImage(imageFilepath, maskFilepath, generalInfo, **_settings)
@@ -1069,7 +1069,7 @@ INFO:radiomics.featureextractor: Calculating features with label: 1
 INFO:radiomics.featureextractor: Loading image and mask
 ERROR:radiomics.batch: FEATURE EXTRACTION FAILED
 Traceback (most recent call last):
-  File "C:\dev\LungCancerRadiomics\src\Radiomics.py", line 103, in get_batch_radiomics
+  File "C:\dev\LungCancerRadiomics\src\Radiomics.py", line 102, in get_batch_radiomics
     featureVector.update(extractor.execute(imageFilepath, maskFilepath, 1))
   File "c:\Users\elena\.conda\envs\LungNodulesRadiomics\lib\site-packages\radiomics\featureextractor.py", line 272, in execute
     image, mask = self.loadImage(imageFilepath, maskFilepath, generalInfo, **_settings)
