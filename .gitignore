@@ -1,5 +1,8 @@
 data/radiomics_features.csv
-/data/examples
-/src/__pycache__
-data/trained_models/model_RF_nt_50_md_1_mss_1.joblib
-/data/trained_models
+data/examples
+src/__pycache__
+data/trained_models
+*.txt
+/data/trained_models_anova
+/data/trained_models_cluster
+*.txt

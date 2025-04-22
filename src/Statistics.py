@@ -1,5 +1,12 @@
 from Imports import *
 from scipy.stats import shapiro, levene
+from scipy.cluster.hierarchy import linkage, fcluster
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectFromModel
+from sklearn.decomposition import PCA
 
 def pearson_correlation(features, outPath = ''):
     """
@@ -32,7 +39,7 @@ def pearson_correlation(features, outPath = ''):
 
     return filtered_features
 
-def anova_ftest(features, outPath='', k=10):
+def anova_feature_selection(features, outPath='', k=10):
     """
     Filtra las K características principales según el valor F de ANOVA.
     """
@@ -43,11 +50,9 @@ def anova_ftest(features, outPath='', k=10):
 
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
-    # Inicializa un DataFrame para almacenar los resultados
     results = pd.DataFrame(columns=['Feature', 'F-statistic', 'p-value'])
 
     rows = []
-    # Realiza la prueba ANOVA para cada característica
     for column in filtered_features.columns:
         groups = [filtered_features[column][np.array(features['Label']) == label] for label in np.unique(features['Label'])]
         if check_anova_assumptions(groups) == False:
@@ -55,13 +60,12 @@ def anova_ftest(features, outPath='', k=10):
         f_statistic, p_value = f_oneway(*groups)
         rows.append({'Feature': column, 'F-statistic': f_statistic, 'p-value': p_value})
     results = pd.concat([results, pd.DataFrame(rows)], ignore_index=True)
-    # Ordena las características por el valor F en orden descendente
     results = results.sort_values(by='F-statistic', ascending=False)
 
-    # Selecciona las K características principales
     top_features = results.head(k)['Feature'].tolist()
     
     with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por ANOVA con k = {k}:\n")
         log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
         log_file.write(f"Cantidad final de características: {len(top_features)}\n")
         log_file.write("Características seleccionadas:\n")
@@ -93,3 +97,123 @@ def check_anova_assumptions(groups):
         return False
 
     return True
+
+def clustering_feature_selection(features, k=10, outPath=''):
+    """
+    Reduce la dimensionalidad de los datos agrupando características similares en clusters jerárquicos.
+    
+    Parámetros:
+    - features: DataFrame de características.
+    - num_clusters: Número deseado de clusters.
+    - outPath: Ruta para guardar el log de las características agrupadas.
+
+    Retorna:
+    - DataFrame con una característica representativa por cluster.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(filtered_features)
+
+    linkage_matrix = linkage(scaled_features.T, method='ward')
+    cluster_labels = fcluster(linkage_matrix, k, criterion='maxclust') 
+
+    cluster_map = pd.DataFrame({'Feature': filtered_features.columns, 'Cluster': cluster_labels})
+
+    representative_features = []
+    for cluster in range(1, k + 1):
+        cluster_features = cluster_map[cluster_map['Cluster'] == cluster]['Feature']
+        representative_features.append(cluster_features.iloc[0])
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas agrupadas por clusters con k = {k}:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características (clusters): {len(representative_features)}\n")
+        log_file.write("Características representativas por cluster:\n")
+        for feature in representative_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = representative_features + exclude_columns
+
+    return features[features_all]
+
+def sfm_feature_selection(features, k=10, outPath=''):
+    """
+    Selects the top K features based on feature importance using a Random Forest model.
+    
+    Parameters:
+    - features: DataFrame of features.
+    - labels: Target labels for supervised learning.
+    - k: Number of top features to select.
+    - outPath: Path to save the log of selected features.
+
+    Returns:
+    - DataFrame with the top K selected features.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+    labels = features['Label']
+    rf = RandomForestClassifier(random_state=42)
+    rf.fit(filtered_features, labels)
+
+    sfm = SelectFromModel(rf, prefit=True, max_features=k)
+    selected_features_mask = sfm.get_support()
+    selected_features = filtered_features.columns[selected_features_mask]
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por SFM con k = {k}:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características: {len(selected_features)}\n")
+        log_file.write("Características seleccionadas:\n")
+        for feature in selected_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = list(selected_features) + exclude_columns
+
+    return features[features_all]
+
+def pca_feature_selection(features, k=10, outPath=''):
+    """
+    Reduces the dimensionality of the data using PCA by selecting the top K components.
+    
+    Parameters:
+    - features: DataFrame of features.
+    - k: Number of principal components to retain.
+    - outPath: Path to save the log of selected components.
+
+    Returns:
+    - DataFrame with the top K principal components.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(filtered_features)
+
+    pca = PCA(n_components=k)
+    principal_components = pca.fit_transform(scaled_features)
+
+    pca_columns = [f"PC{i+1}" for i in range(k)]
+    pca_df = pd.DataFrame(principal_components, columns=pca_columns, index=features.index)
+
+    explained_variance = pca.explained_variance_ratio_
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nPCA Feature Selection with k = {k}:\n")
+        log_file.write(f"Explained variance ratio for each component:\n")
+        for i, variance in enumerate(explained_variance):
+            log_file.write(f"PC{i+1}: {variance:.4f}\n")
+        log_file.write(f"Total explained variance: {sum(explained_variance):.4f}\n")
+
+    return pd.concat([pca_df, features[exclude_columns]], axis=1)
+
+
