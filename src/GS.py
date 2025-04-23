@@ -13,21 +13,13 @@ def GS_rf():
     outputSelectionFilepath = os.path.join(outPath, 'feature_selection_log.txt')
     outputModelFilepath = os.path.join(outPath, 'trained_models')
 
-    # params = {
-    #     'binWidth': 25,
-    #     'verbose': False,
-    #     'sigma': [1, 2, 3],
-    #     'wavelet': 'bior1.3',
-    #     'level': 2
-    # }
-    params = os.path.join(outPath, 'Params.yaml')
-    
+    # params = os.path.join(outPath, 'Params.yaml')
     # radiomics_count, radiomics_features = get_batch_radiomics(inputCSV, params=params,
     #                                                          outPath=outputRadiomicsFilepath, progress_filename=outputProgressFilename)
     radiomics_count, radiomics_features = read_radiomics_csv(outputRadiomicsFilepath)
-    print('Radiomics count:', radiomics_count)
+    print('Cantidad de features seleccionadas por pyRadiomics:', radiomics_count)
     filtered_features = pearson_correlation(radiomics_features, outPath=outputFilteringFilepath)
-    print('Filtered features:', filtered_features)
+    print('Características filtradas:', filtered_features)
 
     n_trees_options = [50,100]
     max_depth_options = [1,2,3]
@@ -43,10 +35,10 @@ def GS_rf():
         #selected_features = hierarchical_clustering_features(filtered_features, outPath=outputSelectionFilepath, k=k)
         #selected_features = sfm_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         selected_features = pca_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
-        print(f'Selected features with k={k}:', selected_features)
+        print(f'Características seleccionadas con k={k}:', selected_features)
         
 
-        print(f"Training model with n_trees={n_trees}, max_depth={max_depth}, min_samples_split={min_samples_split}")
+        print(f"Entrenando modelo con n_trees={n_trees}, max_depth={max_depth}, min_samples_split={min_samples_split}")
 
         scores = model_random_forest(selected_features, 
                             n_trees=n_trees, max_depth=max_depth, min_samples_split=min_samples_split, 
@@ -62,8 +54,8 @@ def GS_rf():
             'mean_roc_auc': mean_roc_auc
         })
         
-        print("Fit time: ", scores['fit_time'].mean())
-        print("Score time: ", scores['score_time'].mean())
+        print("Tiempo de ajuste: ", scores['fit_time'].mean())
+        print("Tiempo de evaluación: ", scores['score_time'].mean())
         for score in scores:
             if score not in ('fit_time', 'score_time'):
                 print(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -76,10 +68,10 @@ def GS_rf():
                 'min_samples_split': min_samples_split,
                 'k': k
             }
-    print('Model training complete.')
-    print("\nBest Hyperparameters:")
+    print('Entrenamiento del modelo completo.')
+    print("\nMejores Hiperparámetros:")
     print(f"n_trees: {best_hyp['n_trees']}, max_depth: {best_hyp['max_depth']}, min_samples_split: {best_hyp['min_samples_split']}, k: {best_hyp['k']}")
-    print(f"Best Mean ROC AUC: {best_score:.2f}")
+    print(f"Mejor ROC AUC Promedio: {best_score:.2f}")
 
 
 def GS_bagging():
@@ -91,21 +83,13 @@ def GS_bagging():
     outputSelectionFilepath = os.path.join(outPath, 'feature_selection_log.txt')
     outputModelFilepath = os.path.join(outPath, 'trained_models')
 
-    # params = {
-    #     'binWidth': 25,
-    #     'verbose': False,
-    #     'sigma': [1, 2, 3],
-    #     'wavelet': 'bior1.3',
-    #     'level': 2
-    # }
-    params = os.path.join(outPath, 'Params.yaml')
-    
+    # params = os.path.join(outPath, 'Params.yaml') 
     # radiomics_count, radiomics_features = get_batch_radiomics(inputCSV, params=params,
     #                                                          outPath=outputRadiomicsFilepath, progress_filename=outputProgressFilename)
     radiomics_count, radiomics_features = read_radiomics_csv(outputRadiomicsFilepath)
-    print('Radiomics count:', radiomics_count)
+    print('Cantidad de features seleccionadas por pyRadiomics:', radiomics_count)
     filtered_features = pearson_correlation(radiomics_features, outPath=outputFilteringFilepath)
-    print('Filtered features:', filtered_features)
+    print('Características filtradas:', filtered_features)
 
     n_estimators_options = [50,100]
     max_samples_options = [1,2,3]
@@ -121,10 +105,10 @@ def GS_bagging():
         #selected_features = clustering_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         #selected_features = sfm_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         selected_features = pca_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
-        print(f'Selected features with k={k}:', selected_features)
+        print(f'Características seleccionadas con k={k}:', selected_features)
         
 
-        print(f"Training model with n_estimators={n_estimators}, max_samples={max_samples}, max_features={max_features}")
+        print(f"Entrenando modelo con n_estimators={n_estimators}, max_samples={max_samples}, max_features={max_features}")
 
         scores = model_bagging(selected_features,
                             n_estimators=n_estimators, max_samples=max_samples, max_features=max_features, 
@@ -140,8 +124,8 @@ def GS_bagging():
             'mean_roc_auc': mean_roc_auc
         })
         
-        print("Fit time: ", scores['fit_time'].mean())
-        print("Score time: ", scores['score_time'].mean())
+        print("Tiempo de ajuste: ", scores['fit_time'].mean())
+        print("Tiempo de evaluación: ", scores['score_time'].mean())
         for score in scores:
             if score not in ('fit_time', 'score_time'):
                 print(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -154,10 +138,10 @@ def GS_bagging():
                 'max_features': max_features,
                 'k': k
             }
-    print('Model training complete.')
-    print("\nBest Hyperparameters:")
+    print('Entrenamiento del modelo completo.')
+    print("\nMejores Hiperparámetros:")
     print(f"n_estimators: {best_hyp['n_estimators']}, max_samples: {best_hyp['max_samples']}, max_features: {best_hyp['max_features']}, k: {best_hyp['k']}")
-    print(f"Best Mean ROC AUC: {best_score:.2f}")
+    print(f"Mejor ROC AUC Promedio: {best_score:.2f}")
 
 def GS_nnet():
     outPath = 'C:\dev\LungCancerRadiomics\data'
@@ -168,21 +152,13 @@ def GS_nnet():
     outputSelectionFilepath = os.path.join(outPath, 'feature_selection_log.txt')
     outputModelFilepath = os.path.join(outPath, 'trained_models')
 
-    # params = {
-    #     'binWidth': 25,
-    #     'verbose': False,
-    #     'sigma': [1, 2, 3],
-    #     'wavelet': 'bior1.3',
-    #     'level': 2
-    # }
-    params = os.path.join(outPath, 'Params.yaml')
-    
+    # params = os.path.join(outPath, 'Params.yaml')
     # radiomics_count, radiomics_features = get_batch_radiomics(inputCSV, params=params,
     #                                                          outPath=outputRadiomicsFilepath, progress_filename=outputProgressFilename)
     radiomics_count, radiomics_features = read_radiomics_csv(outputRadiomicsFilepath)
-    print('Radiomics count:', radiomics_count)
+    print('Cantidad de features seleccionadas por pyRadiomics:', radiomics_count)
     filtered_features = pearson_correlation(radiomics_features, outPath=outputFilteringFilepath)
-    print('Filtered features:', filtered_features)
+    print('Características filtradas:', filtered_features)
 
     architecture_options = [(8,), (16,), (8,8), (16,16)]
     alpha_options = [1, 0.1]
@@ -197,10 +173,10 @@ def GS_nnet():
         #selected_features = clustering_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         #selected_features = sfm_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         selected_features = pca_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
-        print(f'Selected features with k={k}:', selected_features)
+        print(f'Características seleccionadas con k={k}:', selected_features)
         
 
-        print(f"Training model with architecture={architecture}, alpha={alpha}")
+        print(f"Entrenando modelo con arquitectura={architecture}, alpha={alpha}")
 
         scores = model_nnet(selected_features,
                             architecture=architecture, alpha=alpha,
@@ -215,8 +191,8 @@ def GS_nnet():
             'mean_roc_auc': mean_roc_auc
         })
         
-        print("Fit time: ", scores['fit_time'].mean())
-        print("Score time: ", scores['score_time'].mean())
+        print("Tiempo de ajuste: ", scores['fit_time'].mean())
+        print("Tiempo de evaluación: ", scores['score_time'].mean())
         for score in scores:
             if score not in ('fit_time', 'score_time'):
                 print(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -228,10 +204,10 @@ def GS_nnet():
                 'alpha': alpha,
                 'k': k
             }
-    print('Model training complete.')
-    print("\nBest Hyperparameters:")
-    print(f"architecture: {best_hyp['architecture']}, alpha: {best_hyp['alpha']}, k: {best_hyp['k']}")
-    print(f"Best Mean ROC AUC: {best_score:.2f}")
+    print('Entrenamiento del modelo completo.')
+    print("\nMejores Hiperparámetros:")
+    print(f"Arquitectura: {best_hyp['architecture']}, Alpha: {best_hyp['alpha']}, k: {best_hyp['k']}")
+    print(f"Mejor ROC AUC Promedio: {best_score:.2f}")
 
 def GS_knn():
     outPath = 'C:\dev\LungCancerRadiomics\data'
@@ -242,23 +218,15 @@ def GS_knn():
     outputSelectionFilepath = os.path.join(outPath, 'feature_selection_log.txt')
     outputModelFilepath = os.path.join(outPath, 'trained_models')
 
-    # params = {
-    #     'binWidth': 25,
-    #     'verbose': False,
-    #     'sigma': [1, 2, 3],
-    #     'wavelet': 'bior1.3',
-    #     'level': 2
-    # }
-    params = os.path.join(outPath, 'Params.yaml')
-    
+    #params = os.path.join(outPath, 'Params.yaml')
     # radiomics_count, radiomics_features = get_batch_radiomics(inputCSV, params=params,
     #                                                          outPath=outputRadiomicsFilepath, progress_filename=outputProgressFilename)
     radiomics_count, radiomics_features = read_radiomics_csv(outputRadiomicsFilepath)
-    print('Radiomics count:', radiomics_count)
+    print('Cantidad de radiomics:', radiomics_count)
     filtered_features = pearson_correlation(radiomics_features, outPath=outputFilteringFilepath)
-    print('Filtered features:', filtered_features)
+    print('Características filtradas:', len(filtered_features))
 
-    n_neighbors_options = [5,10,15,20]#[50,100,200] tienen que ser menores al numero de muestras
+    n_neighbors_options = [5,10,15,20] #[50,100,200] tienen que ser menores al numero de muestras
     k_options = [5,10,20,40]
     best_hyp = None
     best_score = -float('inf')
@@ -270,10 +238,10 @@ def GS_knn():
         #selected_features = clustering_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         #selected_features = sfm_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
         #selected_features = pca_feature_selection(filtered_features, outPath=outputSelectionFilepath, k=k)
-        print(f'Selected features with k={k}:', selected_features)
+        print(f'Características seleccionadas con k={k}:', selected_features)
         
 
-        print(f"Training model with n_neighbors={n_neighbors}")
+        print(f"Entrenando modelo con n_neighbors={n_neighbors}")
 
         scores = model_knn(selected_features,
                             n_neighbors=n_neighbors, 
@@ -286,8 +254,8 @@ def GS_knn():
             'mean_roc_auc': mean_roc_auc
         })
         
-        print("Fit time: ", scores['fit_time'].mean())
-        print("Score time: ", scores['score_time'].mean())
+        print("Tiempo de ajuste: ", scores['fit_time'].mean())
+        print("Tiempo de evaluación: ", scores['score_time'].mean())
         for score in scores:
             if score not in ('fit_time', 'score_time'):
                 print(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -298,10 +266,10 @@ def GS_knn():
                 'n_neighbors': n_neighbors,
                 'k': k
             }
-    print('Model training complete.')
-    print("\nBest Hyperparameters:")
+    print('Entrenamiento del modelo completo.')
+    print("\nMejores Hiperparámetros:")
     print(f"n_neighbors: {best_hyp['n_neighbors']}, k: {best_hyp['k']}")
-    print(f"Best Mean ROC AUC: {best_score:.2f}")
+    print(f"Mejor ROC AUC Promedio: {best_score:.2f}")
 
 if __name__ == "__main__":
     GS_knn()

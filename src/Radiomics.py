@@ -123,10 +123,7 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):
     return amount, radiomics_array
 
 def read_radiomics_csv(csv_filepath):
-    """
-    Lee el archivo CSV generado por get_batch_radiomics y devuelve la cantidad de filas y las características como un DataFrame.
-    Convierte columnas con datos numéricos almacenados como cadenas en tipos numéricos.
-    """
+
     try:
         features_df = pd.read_csv(csv_filepath)
         amount = len(features_df.columns)

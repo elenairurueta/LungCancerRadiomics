@@ -1,17 +1,9 @@
-# import argparse
-# from Imports import *
-# from scipy.stats import shapiro, levene
-# from scipy.cluster.hierarchy import linkage, fcluster
-# from sklearn.preprocessing import StandardScaler
-# import numpy as np
-# import pandas as pd
-
 from Imports import *
 from Radiomics import get_batch_radiomics, read_radiomics_csv
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Feature selection and model training for lung cancer using radiomics.")
+    parser = argparse.ArgumentParser(description="Selección de características y entrenamiento de modelos para cáncer de pulmón utilizando radiomica.")
     
     # Argumentos para selección de características
     parser.add_argument('--correlation_method', type=str, choices=['pearson', 'spearman', 'kendall'], 
@@ -36,31 +28,31 @@ def main():
     args = parser.parse_args()
     
     try:
-        _,features = read_radiomics_csv(args.input_file)
+        _, features = read_radiomics_csv(args.input_file)
         if features.shape[1] == 3:
             raise FileNotFoundError("El archivo CSV no contiene datos válidos.")
     except FileNotFoundError:
-        _,features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'pyrad_log.txt'), params=os.path.join(args.output_folder, 'Params.yaml'))
+        _, features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'pyrad_log.txt'), params=os.path.join(args.output_folder, 'Params.yaml'))
     
     if args.correlation_method == 'pearson':
         from Statistics import pearson_correlation
         filtered_features = pearson_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
-        print(f"Filtered features shape: {filtered_features.shape}")
     elif args.correlation_method == 'spearman':
-        raise NotImplementedError("Spearman correlation not implemented yet.")
+        raise NotImplementedError("La correlación de Spearman no está implementada aún.")
         # from Statistics import spearman_correlation
         # filtered_features = spearman_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
     elif args.correlation_method == 'kendall':
-        raise NotImplementedError("Kendall correlation not implemented yet.")
+        raise NotImplementedError("La correlación de Kendall no está implementada aún.")
         # from Statistics import kendall_correlation
         # filtered_features = kendall_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
     else:
         filtered_features = features
     
+    print(f"Forma de las características filtradas: {filtered_features.shape}")
+
     if args.feature_selection == 'anova':
         from Statistics import anova_feature_selection
         selected_features = anova_feature_selection(filtered_features, outPath=os.path.join(args.output_folder, 'feature_selection_anova_log.txt'), k=args.k)
-        print(f"Selected features shape: {selected_features.shape}")
     elif args.feature_selection == 'clustering':
         from Statistics import clustering_feature_selection
         selected_features = clustering_feature_selection(filtered_features, k=args.k, outPath=os.path.join(args.output_folder, 'feature_selection_cluster_log.txt'))
@@ -73,17 +65,19 @@ def main():
     else:
         raise(ValueError("Método de selección de características no implementado."))
     
+    print(f"Forma de las características seleccionadas: {selected_features.shape}")
+
     model_params = json.loads(args.model_params) if args.model_params else {}
 
     if args.model == 'svm':
-        raise NotImplementedError("SVM model not implemented yet.")
+        raise NotImplementedError("El modelo SVM no está implementado aún.")
         # from Model import model_svm
         # model = model_svm(**model_params)
     elif args.model == 'random_forest':
         from Model import model_random_forest
         scores = model_random_forest(selected_features, outPath_model=os.path.join(args.output_folder, 'trained_models'), outPath_log=os.path.join(args.output_folder, 'model_RF_training_log.txt'), **model_params)
     elif args.model == 'xgboost':
-        raise NotImplementedError("XGBoost model not implemented yet.") 
+        raise NotImplementedError("El modelo XGBoost no está implementado aún.") 
         # from Model import model_xgboost
         # scores = model_xgboost(**model_params)
     elif args.model == 'bagging':

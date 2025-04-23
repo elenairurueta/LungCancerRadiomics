@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 
 def pearson_correlation(features, outPath = ''):
     """
-    Filtra si coeficiente de correlación de Pearson ≤ 0.95.
+    Filtra si el coeficiente de correlación de Pearson ≤ 0.95.
     """
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
@@ -28,7 +28,7 @@ def pearson_correlation(features, outPath = ''):
             if correlation_matrix.iloc[i, j] > 0.95:
                 to_drop.add(correlation_matrix.columns[i])
                 with open(outPath, "a") as log_file:
-                    log_file.write(f"Feature '{correlation_matrix.columns[i]}' está correlacionada con '{correlation_matrix.columns[j]}' (coeficiente: {correlation_matrix.iloc[i, j]:.2f})\n")
+                    log_file.write(f"La característica '{correlation_matrix.columns[i]}' está correlacionada con '{correlation_matrix.columns[j]}' (coeficiente: {correlation_matrix.iloc[i, j]:.2f})\n")
 
     initial_feature_count = features_excluded.shape[1]
     final_feature_count = initial_feature_count - len(to_drop)
@@ -104,7 +104,7 @@ def clustering_feature_selection(features, k=10, outPath=''):
     
     Parámetros:
     - features: DataFrame de características.
-    - num_clusters: Número deseado de clusters.
+    - k: Número deseado de clusters.
     - outPath: Ruta para guardar el log de las características agrupadas.
 
     Retorna:
@@ -143,16 +143,15 @@ def clustering_feature_selection(features, k=10, outPath=''):
 
 def sfm_feature_selection(features, k=10, outPath=''):
     """
-    Selects the top K features based on feature importance using a Random Forest model.
+    Selecciona las K características principales basándose en la importancia de características usando un modelo Random Forest.
     
-    Parameters:
-    - features: DataFrame of features.
-    - labels: Target labels for supervised learning.
-    - k: Number of top features to select.
-    - outPath: Path to save the log of selected features.
+    Parámetros:
+    - features: DataFrame de características.
+    - k: Número de características principales a seleccionar.
+    - outPath: Ruta para guardar el log de las características seleccionadas.
 
-    Returns:
-    - DataFrame with the top K selected features.
+    Retorna:
+    - DataFrame con las K características seleccionadas.
     """
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
@@ -181,15 +180,15 @@ def sfm_feature_selection(features, k=10, outPath=''):
 
 def pca_feature_selection(features, k=10, outPath=''):
     """
-    Reduces the dimensionality of the data using PCA by selecting the top K components.
+    Reduce la dimensionalidad de los datos utilizando PCA seleccionando los K componentes principales.
     
-    Parameters:
-    - features: DataFrame of features.
-    - k: Number of principal components to retain.
-    - outPath: Path to save the log of selected components.
+    Parámetros:
+    - features: DataFrame de características.
+    - k: Número de componentes principales a retener.
+    - outPath: Ruta para guardar el log de los componentes seleccionados.
 
-    Returns:
-    - DataFrame with the top K principal components.
+    Retorna:
+    - DataFrame con los K componentes principales.
     """
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
@@ -208,11 +207,11 @@ def pca_feature_selection(features, k=10, outPath=''):
 
     explained_variance = pca.explained_variance_ratio_
     with open(outPath, "a") as log_file:
-        log_file.write(f"\n\nPCA Feature Selection with k = {k}:\n")
-        log_file.write(f"Explained variance ratio for each component:\n")
+        log_file.write(f"\n\nSelección de características por PCA con k = {k}:\n")
+        log_file.write(f"Varianza explicada por cada componente:\n")
         for i, variance in enumerate(explained_variance):
             log_file.write(f"PC{i+1}: {variance:.4f}\n")
-        log_file.write(f"Total explained variance: {sum(explained_variance):.4f}\n")
+        log_file.write(f"Varianza total explicada: {sum(explained_variance):.4f}\n")
 
     return pd.concat([pca_df, features[exclude_columns]], axis=1)
 

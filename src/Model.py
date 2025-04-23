@@ -18,10 +18,10 @@ class StreamToLogger:
         self.line_buffer = ''
 
     def write(self, message):
-        if message.strip():  # Evitar líneas vacías
+        if message.strip():
             self.logger.log(self.log_level, message.strip())
 
-    def flush(self):  # Método requerido para compatibilidad
+    def flush(self):
         pass
 
 def model_random_forest(features, outPath_model='', outPath_log='', n_trees=100, max_depth=3, min_samples_split=0.5, crossVal=True):
@@ -45,13 +45,13 @@ def model_random_forest(features, outPath_model='', outPath_log='', n_trees=100,
         sys.stdout = StreamToLogger(logger, logging.INFO)
         rf = RandomForestClassifier(n_estimators=n_trees, max_depth=max_depth, min_samples_split=min_samples_split, 
                                     oob_score=True, random_state=0, verbose=3)
-        logger.info(f"Training model with n_trees={n_trees}, max_depth={max_depth}, min_samples_split={min_samples_split}")
+        logger.info(f"Entrenando modelo Random Forest con n_trees={n_trees}, max_depth={max_depth}, min_samples_split={min_samples_split}")
         if(crossVal):
             scoring = ['precision_macro', 'recall_macro', 'accuracy', 'roc_auc']
             cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=2, random_state=0)
             scores = cross_validate(rf, X, y, cv=cv, scoring=scoring)
-            logger.info(f"Fit time: {scores['fit_time'].mean()}")
-            logger.info(f"Score time: {scores['score_time'].mean()}")
+            logger.info(f"Tiempo de ajuste: {scores['fit_time'].mean()}")
+            logger.info(f"Tiempo de evaluación: {scores['score_time'].mean()}")
             for score in scores:
                 if score not in ('fit_time', 'score_time'):
                     logger.info(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -67,19 +67,19 @@ def model_random_forest(features, outPath_model='', outPath_log='', n_trees=100,
 
 def model_bagging(features, outPath_model='', outPath_log='', n_estimators=10, max_samples=1.0, max_features=1.0, crossVal=True):
     """
-    Implements Bagging for classification tasks.
+    Implementa Bagging para tareas de clasificación.
 
-    Parameters:
-    - features: DataFrame of features.
-    - outPath_model: Path to save the trained model.
-    - outPath_log: Path to save the training log.
-    - n_estimators: Number of base estimators in the ensemble.
-    - max_samples: Fraction of samples to draw for each base estimator.
-    - max_features: Fraction of features to draw for each base estimator.
-    - crossVal: Whether to perform cross-validation.
+    Parámetros:
+    - features: DataFrame de características.
+    - outPath_model: Ruta para guardar el modelo entrenado.
+    - outPath_log: Ruta para guardar el log del entrenamiento.
+    - n_estimators: Número de estimadores base en el conjunto.
+    - max_samples: Fracción de muestras para cada estimador base.
+    - max_features: Fracción de características para cada estimador base.
+    - crossVal: Si se realiza validación cruzada.
 
-    Returns:
-    - Cross-validation scores or an empty list if cross-validation is disabled.
+    Retorna:
+    - Puntuaciones de validación cruzada.
     """
     outPath_model = os.path.join(outPath_model, f'model_BAG_ne_{n_estimators}_ms_{int(max_samples*100)}_mf_{int(max_features*100)}.joblib')
 
@@ -103,14 +103,14 @@ def model_bagging(features, outPath_model='', outPath_log='', n_estimators=10, m
         model = BaggingClassifier(estimator=estimator, n_estimators=n_estimators, max_samples=max_samples, 
                                   max_features=max_features, bootstrap=True, random_state=0)
 
-        logger.info(f"Training Bagging model with n_estimators={n_estimators}, max_samples={max_samples}, max_features={max_features}")
+        logger.info(f"Entrenando modelo Bagging con n_estimators={n_estimators}, max_samples={max_samples}, max_features={max_features}")
 
         if crossVal:
             scoring = ['precision_macro', 'recall_macro', 'accuracy', 'roc_auc']
             cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=2, random_state=0)
             scores = cross_validate(model, X, y, cv=cv, scoring=scoring)
-            logger.info(f"Fit time: {scores['fit_time'].mean()}")
-            logger.info(f"Score time: {scores['score_time'].mean()}")
+            logger.info(f"Tiempo de ajuste: {scores['fit_time'].mean()}")
+            logger.info(f"Tiempo de evaluación: {scores['score_time'].mean()}")
             for score in scores:
                 if score not in ('fit_time', 'score_time'):
                     logger.info(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -126,19 +126,19 @@ def model_bagging(features, outPath_model='', outPath_log='', n_estimators=10, m
 
 def model_nnet(features, outPath_model='', outPath_log='', architecture=(8,), alpha=0.1, max_iter=600, crossVal=True):
     """
-    Implements a neural network (NNET) for classification tasks.
+    Implementa una red neuronal (NNET) para tareas de clasificación.
 
-    Parameters:
-    - features: DataFrame of features.
-    - outPath_model: Path to save the trained model.
-    - outPath_log: Path to save the training log.
-    - architecture: Tuple defining the hidden layer sizes (e.g., (8,), (8, 8), (16, 16)).
-    - alpha: L2 regularization parameter.
-    - max_iter: Maximum number of iterations for training.
-    - crossVal: Whether to perform cross-validation.
+    Parámetros:
+    - features: DataFrame de características.
+    - outPath_model: Ruta para guardar el modelo entrenado.
+    - outPath_log: Ruta para guardar el log del entrenamiento.
+    - architecture: Tupla que define los tamaños de las capas ocultas (por ejemplo, (8,), (8, 8), (16, 16)).
+    - alpha: Parámetro de regularización L2.
+    - max_iter: Número máximo de iteraciones para el entrenamiento.
+    - crossVal: Si se realiza validación cruzada.
 
-    Returns:
-    - Cross-validation scores or an empty list if cross-validation is disabled.
+    Retorna:
+    - Puntuaciones de validación cruzada.
     """
     outPath_model = os.path.join(outPath_model, f'model_NNET_arch_{architecture}_alpha_{alpha}.joblib')
 
@@ -160,14 +160,14 @@ def model_nnet(features, outPath_model='', outPath_log='', architecture=(8,), al
 
         model = MLPClassifier(hidden_layer_sizes=architecture, alpha=alpha, max_iter=max_iter, random_state=0)
 
-        logger.info(f"Training NNET model with architecture={architecture}, alpha={alpha}, max_iter={max_iter}")
+        logger.info(f"Entrenando modelo NNET con arquitectura={architecture}, alpha={alpha}, max_iter={max_iter}")
 
         if crossVal:
             scoring = ['precision_macro', 'recall_macro', 'accuracy', 'roc_auc']
             cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=2, random_state=0)
             scores = cross_validate(model, X, y, cv=cv, scoring=scoring)
-            logger.info(f"Fit time: {scores['fit_time'].mean()}")
-            logger.info(f"Score time: {scores['score_time'].mean()}")
+            logger.info(f"Tiempo de ajuste: {scores['fit_time'].mean()}")
+            logger.info(f"Tiempo de evaluación: {scores['score_time'].mean()}")
             for score in scores:
                 if score not in ('fit_time', 'score_time'):
                     logger.info(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
@@ -183,17 +183,17 @@ def model_nnet(features, outPath_model='', outPath_log='', architecture=(8,), al
 
 def model_knn(features, outPath_model='', outPath_log='', n_neighbors=5, crossVal=True):
     """
-    Implements K-Nearest Neighbors (KNN) for classification tasks.
+    Implementa K-Nearest Neighbors (KNN) para tareas de clasificación.
 
-    Parameters:
-    - features: DataFrame of features.
-    - outPath_model: Path to save the trained model.
-    - outPath_log: Path to save the training log.
-    - n_neighbors: Number of neighbors to consider for classification.
-    - crossVal: Whether to perform cross-validation.
+    Parámetros:
+    - features: DataFrame de características.
+    - outPath_model: Ruta para guardar el modelo entrenado.
+    - outPath_log: Ruta para guardar el log del entrenamiento.
+    - n_neighbors: Número de vecinos a considerar para la clasificación.
+    - crossVal: Si se realiza validación cruzada.
 
-    Returns:
-    - Cross-validation scores or an empty list if cross-validation is disabled.
+    Retorna:
+    - Puntuaciones de validación cruzada.
     """
     outPath_model = os.path.join(outPath_model, f'model_KNN_n_{n_neighbors}.joblib')
 
@@ -213,17 +213,16 @@ def model_knn(features, outPath_model='', outPath_log='', n_neighbors=5, crossVa
     try:
         sys.stdout = StreamToLogger(logger, logging.INFO)
 
-        # Initialize KNeighborsClassifier with uniform weights
         model = KNeighborsClassifier(n_neighbors=n_neighbors, weights='uniform')
 
-        logger.info(f"Training KNN model with n_neighbors={n_neighbors}")
+        logger.info(f"Entrenando modelo KNN con n_neighbors={n_neighbors}")
 
         if crossVal:
             scoring = ['precision_macro', 'recall_macro', 'accuracy', 'roc_auc']
             cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=2, random_state=0)
             scores = cross_validate(model, X, y, cv=cv, scoring=scoring)
-            logger.info(f"Fit time: {scores['fit_time'].mean()}")
-            logger.info(f"Score time: {scores['score_time'].mean()}")
+            logger.info(f"Tiempo de ajuste: {scores['fit_time'].mean()}")
+            logger.info(f"Tiempo de evaluación: {scores['score_time'].mean()}")
             for score in scores:
                 if score not in ('fit_time', 'score_time'):
                     logger.info(f"{score}: " + "(%0.2f +- %0.2f)" % (scores[score].mean(), scores[score].std()))
