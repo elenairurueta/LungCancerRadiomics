@@ -1,6 +1,5 @@
 from Imports import *
-from Radiomics import get_batch_radiomics, read_radiomics_csv
-
+from Data import read_csv
 
 def main():
     parser = argparse.ArgumentParser(description="Selección de características y entrenamiento de modelos para cáncer de pulmón utilizando radiomica.")
@@ -20,31 +19,34 @@ def main():
                         help="Hiperparámetros del modelo en formato JSON (ejemplo: '{\"C\": 1.0, \"kernel\": \"linear\"}').")
     
     # Argumentos generales
-    parser.add_argument('--input_file', type=str, required=True, 
+    parser.add_argument('--radiomics_file', type=str, required=False, 
                         help="Ruta al archivo de entrada con las características.")
+    parser.add_argument('--input_file', type=str, required=False, 
+                        help="Ruta al archivo de entrada con las rutas a las imágenes y máscaras.")
+    parser.add_argument('--split_file', type=str, required=False, 
+                        help="Ruta al archivo que especifica split de folds para crossval.")
     parser.add_argument('--output_folder', type=str, required=True, 
                         help="Ruta a la carpeta de salida para guardar los resultados.")
     
     args = parser.parse_args()
     
-    try:
-        _, features = read_radiomics_csv(args.input_file)
-        if features.shape[1] == 3:
-            raise FileNotFoundError("El archivo CSV no contiene datos válidos.")
-    except FileNotFoundError:
-        _, features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'pyrad_log.txt'), params=os.path.join(args.output_folder, 'Params.yaml'))
-    
+    if args.radiomics_file:
+        _, features = read_csv(args.radiomics_file)
+        features.drop(columns=['PatientID','StudyDate','CoordX','CoordY','CoordZ','LesionID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep','FOLD','image','mask'], inplace=True, errors='ignore')
+    elif args.input_file:
+        from Radiomics import get_batch_radiomics
+        features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), params=None)
+    else:
+        features = None
+
+
+    if args.split_file:
+        _, split_csv = read_csv(args.split_file)
+    else:
+        split_csv = None
     if args.correlation_method == 'pearson':
         from Statistics import pearson_correlation
         filtered_features = pearson_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
-    elif args.correlation_method == 'spearman':
-        raise NotImplementedError("La correlación de Spearman no está implementada aún.")
-        # from Statistics import spearman_correlation
-        # filtered_features = spearman_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
-    elif args.correlation_method == 'kendall':
-        raise NotImplementedError("La correlación de Kendall no está implementada aún.")
-        # from Statistics import kendall_correlation
-        # filtered_features = kendall_correlation(features, outPath=os.path.join(args.output_folder, 'correlation_log.txt'))
     else:
         filtered_features = features
     
@@ -70,29 +72,30 @@ def main():
     model_params = json.loads(args.model_params) if args.model_params else {}
 
     if args.model == 'svm':
-        raise NotImplementedError("El modelo SVM no está implementado aún.")
-        # from Model import model_svm
-        # model = model_svm(**model_params)
+        from Model import model_svm
+        model = model_svm(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_SVM_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'random_forest':
         from Model import model_random_forest
-        scores = model_random_forest(selected_features, outPath_model=os.path.join(args.output_folder, 'trained_models'), outPath_log=os.path.join(args.output_folder, 'model_RF_training_log.txt'), **model_params)
+        scores = model_random_forest(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_RF_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'xgboost':
-        raise NotImplementedError("El modelo XGBoost no está implementado aún.") 
-        # from Model import model_xgboost
-        # scores = model_xgboost(**model_params)
+        from Model import model_xgboost
+        scores = model_xgboost(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_XGB_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'bagging':
         from Model import model_bagging
-        scores = model_bagging(selected_features, outPath_model=os.path.join(args.output_folder, 'trained_models'), outPath_log=os.path.join(args.output_folder, 'model_BAG_training_log.txt'), **model_params)
+        scores = model_bagging(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_BAG_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'nnet':
         from Model import model_nnet
-        scores = model_nnet(selected_features, outPath_model=os.path.join(args.output_folder, 'trained_models'), outPath_log=os.path.join(args.output_folder, 'model_NNET_training_log.txt'), **model_params)
+        scores = model_nnet(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_NNET_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'kNN':   
         from Model import model_knn
-        scores = model_knn(selected_features, outPath_model=os.path.join(args.output_folder, 'trained_models'), outPath_log=os.path.join(args.output_folder, 'model_kNN_training_log.txt'), **model_params)
+        scores = model_knn(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_kNN_training_log.txt'), **model_params, split_csv=split_csv)
     else:
         raise NotImplementedError("Modelo no implementado.")
-    avg_scores = {metric: np.mean(values) for metric, values in scores.items()}
-    std_scores = {metric: np.std(values) for metric, values in scores.items()}
+
+    filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
+    avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
+    std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
+    
     for metric in avg_scores:
         print(f"{metric}: {avg_scores[metric]:.4f} ± {std_scores[metric]:.4f}")
 

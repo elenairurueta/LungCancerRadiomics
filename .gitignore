@@ -6,3 +6,5 @@ data/trained_models
 /data/trained_models_anova
 /data/trained_models_cluster
 *.txt
+/data/models
+*.csv

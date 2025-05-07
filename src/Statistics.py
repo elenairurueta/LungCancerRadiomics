@@ -1,12 +1,4 @@
 from Imports import *
-from scipy.stats import shapiro, levene
-from scipy.cluster.hierarchy import linkage, fcluster
-from sklearn.preprocessing import StandardScaler
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import SelectFromModel
-from sklearn.decomposition import PCA
 
 def pearson_correlation(features, outPath = ''):
     """
@@ -15,7 +7,7 @@ def pearson_correlation(features, outPath = ''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
     
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label'] or col.startswith('diagnostics_')]
 
     features_excluded = features.drop(columns=exclude_columns, errors='ignore')
 
@@ -29,9 +21,10 @@ def pearson_correlation(features, outPath = ''):
                 to_drop.add(correlation_matrix.columns[i])
                 with open(outPath, "a") as log_file:
                     log_file.write(f"La característica '{correlation_matrix.columns[i]}' está correlacionada con '{correlation_matrix.columns[j]}' (coeficiente: {correlation_matrix.iloc[i, j]:.2f})\n")
-
+    # TODO: no se está repitiendo porque la matriz es simétrica?
     initial_feature_count = features_excluded.shape[1]
     final_feature_count = initial_feature_count - len(to_drop)
+
     with open(outPath, "a") as log_file:
         log_file.write(f"\n\nCantidad inicial de características: {initial_feature_count}\n")
         log_file.write(f"Cantidad final de características: {final_feature_count}\n")
@@ -39,14 +32,16 @@ def pearson_correlation(features, outPath = ''):
 
     return filtered_features
 
-def anova_feature_selection(features, outPath='', k=10):
+def anova_feature_selection(features, k=10, outPath=''):
     """
     Filtra las K características principales según el valor F de ANOVA.
     """
+
+
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label'] or col.startswith('diagnostics_')]
 
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
@@ -54,9 +49,9 @@ def anova_feature_selection(features, outPath='', k=10):
 
     rows = []
     for column in filtered_features.columns:
-        groups = [filtered_features[column][np.array(features['Label']) == label] for label in np.unique(features['Label'])]
-        if check_anova_assumptions(groups) == False:
-            continue
+        groups = [filtered_features[column][np.array(features['Label' if 'Label' in features.columns else 'label']) == label] for label in np.unique(features['Label' if 'Label' in features.columns else 'label'])]
+        # if check_anova_assumptions(groups) == False:
+        #     continue
         f_statistic, p_value = f_oneway(*groups)
         rows.append({'Feature': column, 'F-statistic': f_statistic, 'p-value': p_value})
     results = pd.concat([results, pd.DataFrame(rows)], ignore_index=True)
@@ -74,7 +69,7 @@ def anova_feature_selection(features, outPath='', k=10):
             log_file.write(f"{feature}: F-statistic = {f_statistic:.2f}\n")
     
     features_all = top_features + exclude_columns
-
+    print(top_features)
     return features[features_all]
 
 def check_anova_assumptions(groups):
@@ -113,7 +108,7 @@ def clustering_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
     scaler = StandardScaler()
@@ -156,9 +151,10 @@ def sfm_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
-    labels = features['Label']
+    labels = features['Label' if 'Label' in features.columns else 'label']
     rf = RandomForestClassifier(random_state=42)
     rf.fit(filtered_features, labels)
 
@@ -193,7 +189,7 @@ def pca_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
     scaler = StandardScaler()
@@ -215,4 +211,5 @@ def pca_feature_selection(features, k=10, outPath=''):
 
     return pd.concat([pca_df, features[exclude_columns]], axis=1)
 
-
+def shap_feature_selection(features, k=10, outPath=''):
+    return

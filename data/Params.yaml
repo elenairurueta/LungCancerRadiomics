@@ -17,7 +17,7 @@ imageType:
     sigma: [1]
   SquareRoot: {} # for square, no parameters are needed
   Gradient: {} # for gradient, no parameters are needed
-  # Logarithm: {} # for logarithm, no parameters are needed
+  Logarithm: {} # for logarithm, no parameters are needed
 
 # Featureclasses, from which features must be calculated. If a featureclass is not mentioned, no features are calculated
 # for that class. Otherwise, the specified features are calculated, or, if none are specified, all are calculated (excluding redundant/deprecated features).

@@ -121,16 +121,3 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):
                 logger.error('FEATURE EXTRACTION FAILED', exc_info=True)
 
     return amount, radiomics_array
-
-def read_radiomics_csv(csv_filepath):
-
-    try:
-        features_df = pd.read_csv(csv_filepath)
-        amount = len(features_df.columns)
-        
-        features_df = features_df.apply(pd.to_numeric, errors='ignore')
-        
-        return amount, features_df
-    except Exception as e:
-        print(f"Error al leer el archivo CSV: {e}")
-        return 0, None
