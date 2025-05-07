@@ -72,7 +72,6 @@ def model_svm(features, outPath_model='', outPath_log='', kernel='linear', C=1.0
     )
     return train_model(features, model=model, outPath_model=outPath_model, outPath_log=outPath_log, crossVal=crossVal, split_csv=split_csv)
 
-
 def train_model(features, model, outPath_model='', outPath_log='', crossVal=True, scoring=None, cv=None, split_csv=None):
     """
     Función genérica para entrenar un modelo con validación cruzada automática o manual.
@@ -192,5 +191,3 @@ def train_model(features, model, outPath_model='', outPath_log='', crossVal=True
             return {}
     finally:
         sys.stdout = original_stdout
-
-

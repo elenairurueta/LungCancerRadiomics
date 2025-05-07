@@ -211,5 +211,42 @@ def pca_feature_selection(features, k=10, outPath=''):
 
     return pd.concat([pca_df, features[exclude_columns]], axis=1)
 
-def shap_feature_selection(features, k=10, outPath=''):
-    return
+def lasso_feature_selection(features, k=10, alpha = 0.001, outPath=''):
+    """
+    Selecciona las K características principales utilizando Lasso para la selección de características.
+    
+    Parámetros:
+    - features: DataFrame de características.
+    - k: Número de características principales a seleccionar.
+    - outPath: Ruta para guardar el log de las características seleccionadas.
+
+    Retorna:
+    - DataFrame con las K características seleccionadas.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+    labels = features['Label' if 'Label' in features.columns else 'label']
+
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(filtered_features)
+
+    lasso = Lasso(alpha=alpha, random_state=42)
+    lasso.fit(scaled_features, labels)
+
+    feature_importances = pd.Series(np.abs(lasso.coef_), index=filtered_features.columns)
+    top_features = feature_importances.nlargest(k).index.tolist()
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por Lasso con k = {k}:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características: {len(top_features)}\n")
+        log_file.write("Características seleccionadas:\n")
+        for feature in top_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = top_features + exclude_columns
+
+    return features[features_all]

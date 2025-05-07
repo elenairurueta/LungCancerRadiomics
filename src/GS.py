@@ -35,7 +35,11 @@ def GS(feature_selection_method, model_function, hyperparameter_grid, out_path='
         hyperparameters = dict(zip(hyperparameter_grid.keys(), combination))
 
         k = hyperparameters.pop('k', None)
-        selected_features = feature_selection_method(filtered_features, outPath=outputSelectionFilepath, k=k)
+        if('alpha' in hyperparameters):
+            alpha = hyperparameters.pop('alpha', None)
+            selected_features = feature_selection_method(filtered_features, outPath=outputSelectionFilepath, k=k, alpha=alpha)
+        else:
+            selected_features = feature_selection_method(filtered_features, outPath=outputSelectionFilepath, k=k)
         print(f'Características seleccionadas con k={k}:', selected_features)
 
         print(f"Entrenando modelo con {hyperparameters}")
@@ -74,14 +78,15 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    from Statistics import pca_feature_selection, anova_feature_selection, sfm_feature_selection, clustering_feature_selection
+    from Statistics import pca_feature_selection, anova_feature_selection, sfm_feature_selection, clustering_feature_selection, lasso_feature_selection
     from Model import model_random_forest, model_bagging, model_nnet, model_knn, model_xgboost, model_svm
 
     feature_selection_methods = {
         "pca": pca_feature_selection,
         "anova": anova_feature_selection,
         "sfm": sfm_feature_selection,
-        "clustering": clustering_feature_selection
+        "clustering": clustering_feature_selection,
+        "lasso": lasso_feature_selection
     }
 
     model_functions = {

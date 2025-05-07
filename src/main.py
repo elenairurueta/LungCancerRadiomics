@@ -7,10 +7,12 @@ def main():
     # Argumentos para selección de características
     parser.add_argument('--correlation_method', type=str, choices=['pearson', 'spearman', 'kendall'], 
                         default='pearson', help="Método de correlación a usar: 'pearson'.")
-    parser.add_argument('--feature_selection', type=str, choices=['anova', 'clustering', 'sfm', 'pca'], 
-                        required=True, help="Método de selección de características: 'anova', 'clustering', 'sfm' o 'pca'.")
+    parser.add_argument('--feature_selection', type=str, choices=['anova', 'clustering', 'sfm', 'pca', 'lasso'], 
+                        required=True, help="Método de selección de características: 'anova', 'clustering', 'sfm', 'pca' o 'lasso'.")
     parser.add_argument('--k', type=int, default=10, 
                         help="Número de características o clusters a seleccionar (por defecto: 10).")
+    parser.add_argument('--alpha', type=int, default=0.001, required=False,
+                        help="Valor de alpha para la selección de características (por defecto: 0.001).")
     
     # Argumentos para el modelo
     parser.add_argument('--model', type=str, choices=['svm', 'random_forest', 'xgboost', 'bagging', 'nnet', 'kNN'], 
@@ -64,6 +66,9 @@ def main():
     elif args.feature_selection == 'pca':
         from Statistics import pca_feature_selection
         selected_features = pca_feature_selection(filtered_features, k=args.k, outPath=os.path.join(args.output_folder, 'feature_selection_pca_log.txt'))
+    elif args.feature_selection == 'lasso':
+        from Statistics import lasso_feature_selection
+        selected_features = lasso_feature_selection(filtered_features, k=args.k, alpha=args.alpha, outPath=os.path.join(args.output_folder, 'feature_selection_lasso_log.txt'))
     else:
         raise(ValueError("Método de selección de características no implementado."))
     

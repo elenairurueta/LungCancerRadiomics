@@ -28,6 +28,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, GradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_selection import SelectFromModel
+from sklearn.linear_model import Lasso
 from sklearn.decomposition import PCA
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
