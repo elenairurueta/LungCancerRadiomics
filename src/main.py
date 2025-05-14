@@ -29,6 +29,8 @@ def main():
                         help="Ruta al archivo que especifica split de folds para crossval.")
     parser.add_argument('--output_folder', type=str, required=True, 
                         help="Ruta a la carpeta de salida para guardar los resultados.")
+    parser.add_argument('--params_file', type=str, required=False, 
+                        help="Ruta al archivo que especifica los parámetros para pyradiomics.")
     
     args = parser.parse_args()
     
@@ -37,7 +39,7 @@ def main():
         features.drop(columns=['PatientID','StudyDate','CoordX','CoordY','CoordZ','LesionID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep','FOLD','image','mask'], inplace=True, errors='ignore')
     elif args.input_file:
         from Radiomics import get_batch_radiomics
-        features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), params=None)
+        features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'radiomics_log.txt'), params=args.params_file)
     else:
         features = None
 
