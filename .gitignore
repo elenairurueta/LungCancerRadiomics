@@ -8,3 +8,4 @@ data/trained_models
 *.txt
 /data/models
 *.csv
+*.xlsx
