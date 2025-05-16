@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
 
-def modify_segmentation(input_path, output_path):
+def modify_segmentation(input_path, output_path, label_to_change=2, new_label=0):
     """
     Abre una segmentación en formato .nrrd, cambia todos los valores 2 a 0,
     y guarda la segmentación modificada.
@@ -15,7 +15,7 @@ def modify_segmentation(input_path, output_path):
     segmentation_array = sitk.GetArrayFromImage(segmentation)
 
     # Cambiar los valores 2 a 0
-    segmentation_array[segmentation_array == 2] = 0
+    segmentation_array[segmentation_array == label_to_change] = new_label
 
     # Guardar la segmentación modificada
     modified_segmentation = sitk.GetImageFromArray(segmentation_array)
@@ -27,4 +27,4 @@ def modify_segmentation(input_path, output_path):
 
 
 
-modify_segmentation("\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD\\HUB\\HUB_018\\INGENIO_HUB_018_TH_CT_seg.nrrd", "..\\INGENIO_HUB_018_TH_CT_seg_v2.nrrd")
+modify_segmentation("\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD\\HUVH\\HUVH_036\\INGENIO_HUVH_036_TH_CT_seg.nrrd", "..\\INGENIO_HUVH_036_TH_CT_seg.nrrd", label_to_change=2, new_label=1)
