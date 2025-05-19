@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    from Statistics import pca_feature_selection, anova_feature_selection, sfm_feature_selection, clustering_feature_selection, lasso_feature_selection
+    from Statistics import pca_feature_selection, anova_feature_selection, sfm_feature_selection, clustering_feature_selection, lasso_feature_selection, sfs_feature_selection, rfe_feature_selection, rfecv_feature_selection
     from Model import model_random_forest, model_bagging, model_nnet, model_knn, model_xgboost, model_svm
 
     feature_selection_methods = {
@@ -86,7 +86,10 @@ if __name__ == "__main__":
         "anova": anova_feature_selection,
         "sfm": sfm_feature_selection,
         "clustering": clustering_feature_selection,
-        "lasso": lasso_feature_selection
+        "lasso": lasso_feature_selection,
+        "sfs": sfs_feature_selection,
+        "rfe": rfe_feature_selection,
+        "rfecv": rfecv_feature_selection
     }
 
     model_functions = {

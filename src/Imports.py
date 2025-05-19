@@ -27,7 +27,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, GradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.feature_selection import SelectFromModel
+from sklearn.feature_selection import SelectFromModel, SequentialFeatureSelector, RFE, RFECV
 from sklearn.linear_model import Lasso
 from sklearn.decomposition import PCA
 from sklearn.neural_network import MLPClassifier
@@ -37,3 +37,6 @@ from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, reca
 
 import xgboost as xgb
 import shap
+
+
+#from lazypredict.Supervised import LazyClassifier

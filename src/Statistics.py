@@ -250,3 +250,94 @@ def lasso_feature_selection(features, k=10, alpha = 0.001, outPath=''):
     features_all = top_features + exclude_columns
 
     return features[features_all]
+
+def sfs_feature_selection(features, k=10, outPath=''):
+    """
+    Selecciona las K mejores características usando Sequential Forward Selection (SFS) con un clasificador Random Forest.
+    
+    Parámetros:
+    - features: DataFrame de características.
+    - k: Número de características a seleccionar.
+    - outPath: Ruta para guardar el log de las características seleccionadas.
+
+    Retorna:
+    - DataFrame con las K características seleccionadas.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+    labels = features['Label' if 'Label' in features.columns else 'label']
+
+    rf = RandomForestClassifier(random_state=42)
+    sfs = SequentialFeatureSelector(rf, n_features_to_select=k, direction='forward', scoring='accuracy', cv=5, n_jobs=-1)
+    sfs.fit(filtered_features, labels)
+    selected_features = filtered_features.columns[sfs.get_support()].tolist()
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por Sequential Forward Selection con k = {k}:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características: {len(selected_features)}\n")
+        log_file.write("Características seleccionadas:\n")
+        for feature in selected_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = selected_features + exclude_columns
+    return features[features_all]
+
+def rfe_feature_selection(features, k=10, outPath=''):
+    """
+    Selecciona las K mejores características usando Recursive Feature Elimination (RFE) con un clasificador Random Forest.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+    labels = features['Label' if 'Label' in features.columns else 'label']
+
+    rf = RandomForestClassifier(random_state=42)
+    rfe = RFE(rf, n_features_to_select=k)
+    rfe.fit(filtered_features, labels)
+    selected_features = filtered_features.columns[rfe.get_support()].tolist()
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por RFE con k = {k}:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características: {len(selected_features)}\n")
+        log_file.write("Características seleccionadas:\n")
+        for feature in selected_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = selected_features + exclude_columns
+    return features[features_all]
+
+def rfecv_feature_selection(features, k=10, outPath=''):
+    """
+    Selecciona el número óptimo de características usando RFECV con un clasificador Random Forest.
+    """
+    if isinstance(features, list) or isinstance(features, np.ndarray):
+        features = pd.DataFrame(features)
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+    labels = features['Label' if 'Label' in features.columns else 'label']
+
+    rf = RandomForestClassifier(random_state=42)
+    rfecv = RFECV(rf, min_features_to_select=k, step=1, cv=5, scoring='accuracy', n_jobs=-1)
+    rfecv.fit(filtered_features, labels)
+    selected_features = filtered_features.columns[rfecv.get_support()].tolist()
+
+    with open(outPath, "a") as log_file:
+        log_file.write(f"\n\nCaracterísticas seleccionadas por RFECV:\n")
+        log_file.write(f"\n\nCantidad inicial de características: {len(filtered_features.columns)}\n")
+        log_file.write(f"Cantidad final de características: {len(selected_features)}\n")
+        log_file.write("Características seleccionadas:\n")
+        for feature in selected_features:
+            log_file.write(f"{feature}\n")
+
+    features_all = selected_features + exclude_columns
+    return features[features_all]
+
+# TODO: univariate Cox proportional regression, with only those having p < 0.05 advancing to the second step: sequential forward selection

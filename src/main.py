@@ -7,8 +7,8 @@ def main():
     # Argumentos para selección de características
     parser.add_argument('--correlation_method', type=str, choices=['pearson', 'spearman', 'kendall'], 
                         default='pearson', help="Método de correlación a usar: 'pearson'.")
-    parser.add_argument('--feature_selection', type=str, choices=['anova', 'clustering', 'sfm', 'pca', 'lasso'], 
-                        required=True, help="Método de selección de características: 'anova', 'clustering', 'sfm', 'pca' o 'lasso'.")
+    parser.add_argument('--feature_selection', type=str, choices=['anova', 'clustering', 'sfm', 'pca', 'lasso', 'sfs', 'rfe', 'rfecv'], 
+                        required=True, help="Método de selección de características: 'anova', 'clustering', 'sfm', 'pca', 'lasso', 'sfs', 'rfe' o 'rfecv'.")
     parser.add_argument('--k', type=int, default=10, 
                         help="Número de características o clusters a seleccionar (por defecto: 10).")
     parser.add_argument('--alpha', type=int, default=0.001, required=False,
@@ -71,6 +71,15 @@ def main():
     elif args.feature_selection == 'lasso':
         from Statistics import lasso_feature_selection
         selected_features = lasso_feature_selection(filtered_features, k=args.k, alpha=args.alpha, outPath=os.path.join(args.output_folder, 'feature_selection_lasso_log.txt'))
+    elif args.feature_selection == 'sfs':
+        from Statistics import sfs_feature_selection
+        selected_features = sfs_feature_selection(filtered_features, k=args.k, outPath=os.path.join(args.output_folder, 'feature_selection_sfs_log.txt'))
+    elif args.feature_selection == 'rfe':
+        from Statistics import rfe_feature_selection
+        selected_features = rfe_feature_selection(filtered_features, k=args.k, outPath=os.path.join(args.output_folder, 'feature_selection_rfe_log.txt'))
+    elif args.feature_selection == 'rfecv':
+        from Statistics import rfecv_feature_selection
+        selected_features = rfecv_feature_selection(filtered_features, k=args.k, outPath=os.path.join(args.output_folder, 'feature_selection_rfecv_log.txt'))
     else:
         raise(ValueError("Método de selección de características no implementado."))
     
