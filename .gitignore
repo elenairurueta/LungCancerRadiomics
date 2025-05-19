@@ -9,3 +9,4 @@ data/trained_models
 /data/models
 *.csv
 *.xlsx
+/data/RIDERLungCT
