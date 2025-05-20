@@ -191,3 +191,96 @@ def train_model(features, model, outPath_model='', outPath_log='', crossVal=True
             return {}
     finally:
         sys.stdout = original_stdout
+
+
+def lazy_classifier(features, outPath_model='', outPath_log='', crossVal=True, split_csv=None):
+    """
+    Función para entrenar un modelo utilizando LazyClassifier.
+
+    Parámetros:
+    - features: DataFrame con las características y etiquetas.
+    - outPath_model: Ruta para guardar el modelo entrenado.
+    - outPath_log: Ruta para guardar el log del entrenamiento.
+    - crossVal: Si se realiza validación cruzada.
+    - split_csv: DataFrame con la columna `FOLD` para realizar validación cruzada manual.
+
+    Retorna:
+    - scores: Diccionario con las métricas de validación cruzada o vacío si no se realiza validación cruzada.
+    """
+
+    os.makedirs(os.path.dirname(outPath_log), exist_ok=True)
+    with open(outPath_log, 'w') as log_file:
+        log_file.write('')
+    logging.basicConfig(filename=outPath_log, level=logging.INFO, format='%(asctime)s - %(message)s')
+    logger = logging.getLogger()
+    original_stdout = sys.stdout
+
+    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'SeriesInstanceUID', 'AnnotationID', 'image', 'mask', 'Label', 'label', 'FOLD'] or col.startswith('diagnostics_')]
+
+    clf = LazyClassifier(verbose=0,ignore_warnings=True, custom_metric=None)
+
+    try:
+        sys.stdout = StreamToLogger(logger, logging.INFO)
+        logger.info(f"Entrenando modelo: {clf}")
+        
+        if crossVal:
+            if split_csv is not None:
+                split_features = features.merge(split_csv, on=['SeriesInstanceUID', 'AnnotationID', 'label'], how='left')
+                drop_cols = ['PatientID','SeriesInstanceUID','StudyDate','CoordX','CoordY','CoordZ','LesionID','AnnotationID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep']
+                split_features.drop(columns=drop_cols, inplace=True, errors='ignore')
+
+                folds = split_features['FOLD'].unique()
+
+                for fold in folds:
+                    logger.info(f"Procesando fold {fold}...")
+                    from Data import split_by_fold
+                    train_data, val_data = split_by_fold(split_features, fold_column='FOLD', current_fold=fold)
+
+                    y_train = train_data['Label' if 'Label' in train_data.columns else 'label'].to_numpy()
+                    X_train = train_data.drop(columns=exclude_columns, errors='ignore').to_numpy()
+                    y_val = val_data['Label' if 'Label' in val_data.columns else 'label'].to_numpy()
+                    X_val = val_data.drop(columns=exclude_columns, errors='ignore').to_numpy()
+                    
+                    logger.info(f"Forma de X_train: {X_train.shape}, y_train: {y_train.shape}")
+                    logger.info(f"Forma de X_val: {X_val.shape}, y_val: {y_val.shape}")
+
+                    models,predictions = clf.fit(X_train, X_val, y_train, y_val)
+
+                
+                for model in models:
+                    logger.info(model)
+
+                return models, predictions
+            else:
+                n_splits = 3
+                if scoring is None:
+                    scoring = {
+                        'precision_macro': make_scorer(precision_score, average='macro', zero_division=0),
+                        'recall_macro': make_scorer(recall_score, average='macro', zero_division=0),
+                        'accuracy': 'accuracy',
+                        'roc_auc': 'roc_auc'
+                    }
+                if cv is None:
+                    cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=2, random_state=0)
+                filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+                X = filtered_features.to_numpy()
+                y = features['Label' if 'Label' in features.columns else 'label'].to_numpy()
+                for train_idx, val_idx in cv.split(X, y):
+                    X_train, X_val = X[train_idx], X[val_idx]
+                    y_train, y_val = y[train_idx], y[val_idx]
+                    models, predictions = clf.fit(X_train, X_val, y_train, y_val)
+                    logger.info(models, predictions)
+
+                return models, predictions
+            
+        else:
+            filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+            X = filtered_features.to_numpy()
+            y = features['Label' if 'Label' in features.columns else 'label'].to_numpy()
+            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
+            models, predictions = clf.fit(X_train, X_val, y_train, y_val)
+            return models, predictions
+        
+    finally:
+        sys.stdout = original_stdout
+    

@@ -15,8 +15,8 @@ def main():
                         help="Valor de alpha para la selección de características (por defecto: 0.001).")
     
     # Argumentos para el modelo
-    parser.add_argument('--model', type=str, choices=['svm', 'random_forest', 'xgboost', 'bagging', 'nnet', 'kNN'], 
-                        required=True, help="Modelo a usar: 'svm', 'random_forest', 'xgboost', 'bagging', 'nnet' o 'kNN'.")
+    parser.add_argument('--model', type=str, choices=['svm', 'random_forest', 'xgboost', 'bagging', 'nnet', 'kNN', 'lazy'], 
+                        required=True, help="Modelo a usar: 'svm', 'random_forest', 'xgboost', 'bagging', 'nnet', 'kNN' o 'lazy'.")
     parser.add_argument('--model_params', type=str, default='', 
                         help="Hiperparámetros del modelo en formato JSON (ejemplo: '{\"C\": 1.0, \"kernel\": \"linear\"}').")
     
@@ -42,7 +42,6 @@ def main():
         features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'radiomics_log.txt'), params=args.params_file)
     else:
         features = None
-
 
     if args.split_file:
         _, split_csv = read_csv(args.split_file)
@@ -105,15 +104,21 @@ def main():
     elif args.model == 'kNN':   
         from Model import model_knn
         scores = model_knn(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_kNN_training_log.txt'), **model_params, split_csv=split_csv)
+    elif args.model == 'lazy':
+        from Model import lazy_classifier
+        models, predicts = lazy_classifier(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_LAZY_training_log.txt'), split_csv=split_csv)
     else:
         raise NotImplementedError("Modelo no implementado.")
 
-    filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
-    avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
-    std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
-    
-    for metric in avg_scores:
-        print(f"{metric}: {avg_scores[metric]:.4f} ± {std_scores[metric]:.4f}")
+    if args.model != 'lazy':
+        filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
+        avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
+        std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
+        
+        for metric in avg_scores:
+            print(f"{metric}: {avg_scores[metric]:.4f} ± {std_scores[metric]:.4f}")
+    else:
+        print(models, predicts)
 
 if __name__ == "__main__":
     main()
