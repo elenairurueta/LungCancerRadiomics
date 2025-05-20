@@ -39,4 +39,5 @@ import xgboost as xgb
 import shap
 
 
-#from lazypredict.Supervised import LazyClassifier
+from lazypredict.Supervised import LazyClassifier
+from sklearn.model_selection import train_test_split

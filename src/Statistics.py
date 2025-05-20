@@ -271,7 +271,7 @@ def sfs_feature_selection(features, k=10, outPath=''):
     labels = features['Label' if 'Label' in features.columns else 'label']
 
     rf = RandomForestClassifier(random_state=42)
-    sfs = SequentialFeatureSelector(rf, n_features_to_select=k, direction='forward', scoring='accuracy', cv=5, n_jobs=-1)
+    sfs = SequentialFeatureSelector(rf, n_features_to_select=k, direction='forward', scoring='roc_auc', cv=5, n_jobs=-1, tol=0.001)
     sfs.fit(filtered_features, labels)
     selected_features = filtered_features.columns[sfs.get_support()].tolist()
 

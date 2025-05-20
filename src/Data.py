@@ -39,10 +39,8 @@ def split_by_fold(data, fold_column='FOLD', current_fold=1):
 
     return train_data.drop(columns=fold_column), val_data.drop(columns=fold_column)
 
-def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD", output_csv="..\\data\\ingenio_dataset.csv"):
+def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD", output_csv=".\\data\\ingenio_dataset.csv"):
     """
-    TODO: quiero especificar qué labels hay en la segmentación
-
     Genera un archivo CSV con las rutas de las imágenes y segmentaciones en formato .nrrd.
 
     Parámetros:
@@ -100,8 +98,8 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
 
 
 
-ingenio_dataset()
-get_batch_radiomics(inputCSV="..\\data\\ingenio_dataset.csv",
-                    outPath="..\\data\\ingenio_radiomics.csv", 
-                    progress_filename="..\\data\\radiomics_log.txt",
-                    params="..\\data\\Params.yaml")
+#ingenio_dataset()
+# get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset.csv",
+#                     outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics.csv", 
+#                     progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
+#                     params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
