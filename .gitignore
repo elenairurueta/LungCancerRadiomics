@@ -10,3 +10,4 @@ data/trained_models
 *.csv
 *.xlsx
 /data/RIDERLungCT
+src/LUNA25.py
