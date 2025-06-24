@@ -95,16 +95,21 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
 
     print(f"Archivo CSV generado en: {output_csv}")
 
-def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", 
-                      labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", 
-                      output_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv"):
+def merge_with_labels(dataset_csv, labels_csv, output_csv):
     """
     Une el dataset con las columnas PFS_6m y OS_12m del archivo labels_csv.
     Guarda el resultado en un csv.
     """
-
+    # Revisar si hay sujetos repetidos en df_dataset
     df_dataset = pd.read_csv(dataset_csv)
     df_labels = pd.read_csv(labels_csv)
+
+    duplicados = df_dataset['subject'][df_dataset['subject'].duplicated()]
+    if not duplicados.empty:
+        print("Sujetos repetidos encontrados en df_dataset:")
+        print(duplicados)
+    else:
+        print("No hay sujetos repetidos en df_dataset.")
 
     df_labels['record_id'] = df_labels['record_id'].str.replace('-', '_')
     df_labels = df_labels[['record_id', 'PFS_6m', 'OS_12m']]
@@ -125,7 +130,7 @@ def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv",
         writer.writerows(merged.to_dict(orient='records'))
     print(f"Archivo CSV combinado guardado en: {output_csv}")
 
-def save_stratified_folds(input_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv"):
+def save_stratified_folds(input_csv):
     """
     Realiza un StratifiedKFold de 5 y 10 folds para PFS_6m y OS_12m y guarda los resultados en cuatro archivos Excel.
     """
@@ -159,9 +164,12 @@ def save_stratified_folds(input_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.
 
 
 # ingenio_dataset()
-# merge_with_labels()
+# merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", 
+#                   labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", 
+#                   output_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv")
 # save_stratified_folds(input_csv="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL_labels.csv")
-# get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
-#                     outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
-#                     progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
-#                     params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
+get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
+                    outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
+                    progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
+                    params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml",
+                    start_index=230)

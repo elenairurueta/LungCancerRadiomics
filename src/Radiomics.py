@@ -24,7 +24,12 @@ def get_singleImage_radiomics(image_path, label_path, params=None, image_types=N
 
     return extractor.execute(image_path, label_path)
   
-def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):    
+def get_batch_radiomics(inputCSV, outPath, progress_filename, params, start_index=0):
+    """
+    Procesa radiomics batch, permitiendo retomar desde un paciente específico.
+    Parámetros:
+    - start_index: índice del paciente por el cual empezar (por defecto 0).
+    """
     csv.field_size_limit(10**6)
 
     # Configure logging
@@ -45,9 +50,8 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):
 
     flists = []
     try:
-        with open(inputCSV, 'r') as inFile:
-            cr = csv.DictReader(inFile, lineterminator='\n')
-            flists = [row for row in cr]
+        df = pd.read_csv(inputCSV)
+        flists = df.to_dict(orient='records')
     except Exception:
         logger.error('CSV READ FAILED', exc_info=True)
 
@@ -79,7 +83,7 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):
 
     radiomics_array = []
 
-    for idx, entry in enumerate(flists, start=1):
+    for idx, entry in enumerate(flists[start_index:], start=start_index+1):
 
         logger.info("(%d/%d) Processing Patient (Image: %s, Mask: %s)", idx, len(flists), entry['Image'], entry['Mask'])
 
@@ -105,10 +109,16 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params=None):
                 logger.info("Extracted %d features", amount)
                 logger.info("Features: %s", featureVector.keys())
                 try:
+                    # Solo escribe los headers si el archivo no existe o está vacío
+                    write_headers = False
+                    if not os.path.exists(outPath) or os.path.getsize(outPath) == 0:
+                        write_headers = True
+
                     with open(outPath, 'a') as outputFile:
                         writer = csv.writer(outputFile, lineterminator='\n')
                         if headers is None:
                             headers = list(featureVector.keys())
+                        if write_headers:
                             writer.writerow(headers)
 
                         row = []
