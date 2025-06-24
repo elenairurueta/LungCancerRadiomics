@@ -23,7 +23,7 @@ from radiomics.imageoperations import resampleImage
 from scipy.stats import shapiro, levene, f_oneway
 from scipy.cluster.hierarchy import linkage, fcluster
 
-from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate
+from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, GradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -37,7 +37,6 @@ from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, reca
 
 import xgboost as xgb
 import shap
-
 
 from lazypredict.Supervised import LazyClassifier
 from sklearn.model_selection import train_test_split

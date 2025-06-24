@@ -1,9 +1,6 @@
 from Imports import *
 from Radiomics import get_batch_radiomics
 
-import os
-import csv
-
 def read_csv(csv_filepath):
     """
     Lee un archivo CSV y devuelve un DataFrame de pandas.
@@ -39,7 +36,8 @@ def split_by_fold(data, fold_column='FOLD', current_fold=1):
 
     return train_data.drop(columns=fold_column), val_data.drop(columns=fold_column)
 
-def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD", output_csv=".\\data\\ingenio_dataset.csv"):
+def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD", 
+                    output_csv=".\\data\\ingenio_dataset.csv"):
     """
     Genera un archivo CSV con las rutas de las imágenes y segmentaciones en formato .nrrd.
 
@@ -48,10 +46,11 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
     - output_csv: Ruta del archivo CSV de salida.
 
     El CSV generado tendrá las columnas:
-    - 'hospital': Nombre del hospital.
-    - 'subject': Identificador del sujeto.
-    - 'image_path': Ruta de la imagen CT.
-    - 'segmentation_path': Ruta de la segmentación correspondiente.
+    - 'Hospital': Nombre del hospital.
+    - 'Subject': Identificador del sujeto.
+    - 'Image': Ruta de la imagen CT.
+    - 'Mask': Ruta de la segmentación correspondiente.
+    - 'Labels': Lista de etiquetas únicas encontradas en la segmentación.
     """
     data = []
 
@@ -78,8 +77,8 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
                     unique_labels = np.unique(segmentation_array)           
 
                     data.append({
-                        "hospital": hospital,
-                        "subject": subject,
+                        "Hospital": hospital,
+                        "Subject": subject,
                         "Image": image_path,
                         "Mask": segmentation_path,
                         "Labels": unique_labels
@@ -96,13 +95,13 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
 
     print(f"Archivo CSV generado en: {output_csv}")
 
-
-def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", output_csv=".\\data\\ingenio_dataset_labels.csv"):
+def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", 
+                      labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", 
+                      output_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv"):
     """
     Une el dataset con las columnas PFS_6m y OS_12m del archivo labels_csv.
-    Guarda el resultado en un Excel.
+    Guarda el resultado en un csv.
     """
-    import pandas as pd
 
     df_dataset = pd.read_csv(dataset_csv)
     df_labels = pd.read_csv(labels_csv)
@@ -124,11 +123,45 @@ def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", lab
         writer = csv.DictWriter(csv_file, fieldnames=columnas)
         writer.writeheader()
         writer.writerows(merged.to_dict(orient='records'))
-    print(f"Archivo Excel combinado guardado en: {output_csv}")
+    print(f"Archivo CSV combinado guardado en: {output_csv}")
+
+def save_stratified_folds(input_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv"):
+    """
+    Realiza un StratifiedKFold de 5 y 10 folds para PFS_6m y OS_12m y guarda los resultados en cuatro archivos Excel.
+    """
+
+    df = pd.read_csv(input_csv)
+    print(f"Total registros en el dataset: {len(df)}")
+    print(f"Columnas del dataset: {df.columns.tolist()}")
+
+    for label in ["PFS_6m", "OS_12m"]:
+
+        df_label = df[df[label].notna() & (df[label] != '')].copy()
+        df_label[label] = df_label[label].astype(int)
+
+        for n_splits in [5, 10]:
+            skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+            df_folds = df_label.copy()
+            df_folds["FOLD"] = -1
+
+            for fold, (_, val_idx) in enumerate(skf.split(df_folds, df_folds[label])):
+                df_folds.iloc[val_idx, df_folds.columns.get_loc("FOLD")] = fold
+
+            output_csv = f".\\data\\ingenio_split_labels_{label}_{n_splits}folds.csv"
+            fieldnames = ["hospital", "subject", "Image", "Mask", "Labels", label, "FOLD"]
+
+            with open(output_csv, mode='w', newline='') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(df_folds[fieldnames].to_dict(orient='records'))
+            print(f"Archivo CSV combinado guardado en: {output_csv}")
+
+
 
 # ingenio_dataset()
 # merge_with_labels()
-get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
-                    outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
-                    progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
-                    params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
+# save_stratified_folds(input_csv="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL_labels.csv")
+# get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
+#                     outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
+#                     progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
+#                     params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
