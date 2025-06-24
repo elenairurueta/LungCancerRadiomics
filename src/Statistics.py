@@ -263,6 +263,7 @@ def sfs_feature_selection(features, k=10, outPath=''):
     Retorna:
     - DataFrame con las K características seleccionadas.
     """
+    
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
@@ -290,6 +291,7 @@ def rfe_feature_selection(features, k=10, outPath=''):
     """
     Selecciona las K mejores características usando Recursive Feature Elimination (RFE) con un clasificador Random Forest.
     """
+
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
@@ -317,6 +319,7 @@ def rfecv_feature_selection(features, k=10, outPath=''):
     """
     Selecciona el número óptimo de características usando RFECV con un clasificador Random Forest.
     """
+
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 

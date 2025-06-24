@@ -97,9 +97,38 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
     print(f"Archivo CSV generado en: {output_csv}")
 
 
+def merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", output_csv=".\\data\\ingenio_dataset_labels.csv"):
+    """
+    Une el dataset con las columnas PFS_6m y OS_12m del archivo labels_csv.
+    Guarda el resultado en un Excel.
+    """
+    import pandas as pd
 
-#ingenio_dataset()
-# get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset.csv",
-#                     outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics.csv", 
-#                     progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
-#                     params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
+    df_dataset = pd.read_csv(dataset_csv)
+    df_labels = pd.read_csv(labels_csv)
+
+    df_labels['record_id'] = df_labels['record_id'].str.replace('-', '_')
+    df_labels = df_labels[['record_id', 'PFS_6m', 'OS_12m']]
+
+    merged = df_dataset.merge(df_labels, left_on='subject', right_on='record_id', how='left')
+
+    columnas = ["hospital", "subject", "Image", "Mask", "Labels", "PFS_6m", "OS_12m"]
+    merged = merged[columnas]
+
+    merged = merged.fillna('')
+
+    for col in ["PFS_6m", "OS_12m"]:
+        merged[col] = merged[col].apply(lambda x: int(float(x)) if str(x).strip() != '' else '')
+
+    with open(output_csv, mode='w', newline='') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=columnas)
+        writer.writeheader()
+        writer.writerows(merged.to_dict(orient='records'))
+    print(f"Archivo Excel combinado guardado en: {output_csv}")
+
+# ingenio_dataset()
+# merge_with_labels()
+get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
+                    outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
+                    progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
+                    params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml")
