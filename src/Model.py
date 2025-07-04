@@ -105,8 +105,8 @@ def train_model(features, model, outPath_model='', outPath_log='', crossVal=True
         
         if crossVal:
             if split_csv is not None:
-                split_features = features.merge(split_csv, on=['SeriesInstanceUID', 'AnnotationID', 'label'], how='left')
-                drop_cols = ['PatientID','SeriesInstanceUID','StudyDate','CoordX','CoordY','CoordZ','LesionID','AnnotationID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep']
+                split_features = features.merge(split_csv, on=['hospital', 'subject'], how='left')
+                drop_cols = ['PatientID','SeriesInstanceUID','StudyDate','CoordX','CoordY','CoordZ','LesionID','AnnotationID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep', 'OS_12m', 'PFS_6m', 'hospital', 'subject', 'Image', 'Mask', 'Labels']
                 split_features.drop(columns=drop_cols, inplace=True, errors='ignore')
 
                 folds = split_features['FOLD'].unique()
@@ -121,7 +121,7 @@ def train_model(features, model, outPath_model='', outPath_log='', crossVal=True
                     X_train = train_data.drop(columns=exclude_columns, errors='ignore').to_numpy()
                     y_val = val_data['Label' if 'Label' in val_data.columns else 'label'].to_numpy()
                     X_val = val_data.drop(columns=exclude_columns, errors='ignore').to_numpy()
-                    
+
                     logger.info(f"Forma de X_train: {X_train.shape}, y_train: {y_train.shape}")
                     logger.info(f"Forma de X_val: {X_val.shape}, y_val: {y_val.shape}")
 
@@ -191,7 +191,6 @@ def train_model(features, model, outPath_model='', outPath_log='', crossVal=True
             return {}
     finally:
         sys.stdout = original_stdout
-
 
 def lazy_classifier(features, outPath_model='', outPath_log='', crossVal=True, split_csv=None):
     """
@@ -283,4 +282,3 @@ def lazy_classifier(features, outPath_model='', outPath_log='', crossVal=True, s
         
     finally:
         sys.stdout = original_stdout
-    

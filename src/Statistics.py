@@ -1,3 +1,4 @@
+from pyexpat import features
 from Imports import *
 
 def pearson_correlation(features, outPath = ''):
@@ -7,9 +8,13 @@ def pearson_correlation(features, outPath = ''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
     
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'Labels', 'SeriesInstanceUID', 'AnnotationID', 'label'] or col.startswith('diagnostics_')]
+
+    print(features.columns)
 
     features_excluded = features.drop(columns=exclude_columns, errors='ignore')
+
+    print(features_excluded.columns)
 
     correlation_matrix = features_excluded.corr().abs()
     print("Matriz de correlación de Pearson:\n", correlation_matrix)
@@ -41,9 +46,13 @@ def anova_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
+
+    print(features.columns)
 
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
+
+    print(filtered_features.columns)
 
     results = pd.DataFrame(columns=['Feature', 'F-statistic', 'p-value'])
 
@@ -108,7 +117,7 @@ def clustering_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
     scaler = StandardScaler()
@@ -151,7 +160,7 @@ def sfm_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
     labels = features['Label' if 'Label' in features.columns else 'label']
@@ -189,7 +198,7 @@ def pca_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
 
     scaler = StandardScaler()
@@ -226,7 +235,7 @@ def lasso_feature_selection(features, k=10, alpha = 0.001, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
     labels = features['Label' if 'Label' in features.columns else 'label']
 
@@ -267,7 +276,7 @@ def sfs_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
     labels = features['Label' if 'Label' in features.columns else 'label']
 
@@ -295,7 +304,7 @@ def rfe_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
     labels = features['Label' if 'Label' in features.columns else 'label']
 
@@ -323,7 +332,7 @@ def rfecv_feature_selection(features, k=10, outPath=''):
     if isinstance(features, list) or isinstance(features, np.ndarray):
         features = pd.DataFrame(features)
 
-    exclude_columns = [col for col in features.columns if col in ['Image', 'Mask', 'Label', 'label', 'SeriesInstanceUID', 'AnnotationID'] or col.startswith('diagnostics_')]
+    exclude_columns = [col for col in features.columns if col in ['hospital', 'subject', 'Image', 'Mask', 'Label', 'SeriesInstanceUID', 'AnnotationID', 'label', 'Labels'] or col.startswith('diagnostics_')]
     filtered_features = features.drop(columns=exclude_columns, errors='ignore')
     labels = features['Label' if 'Label' in features.columns else 'label']
 
@@ -342,5 +351,3 @@ def rfecv_feature_selection(features, k=10, outPath=''):
 
     features_all = selected_features + exclude_columns
     return features[features_all]
-
-# TODO: univariate Cox proportional regression, with only those having p < 0.05 advancing to the second step: sequential forward selection

@@ -172,5 +172,3 @@ def check_folder_files(root_folder, extension):
         print(f"Todos los archivos en {root_folder} y subcarpetas son {extension}")
     else:
         print(f"Hay archivos no {extension} en {root_folder}")
-
-

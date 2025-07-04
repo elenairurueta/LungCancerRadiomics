@@ -52,6 +52,8 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
     - 'Mask': Ruta de la segmentación correspondiente.
     - 'Labels': Lista de etiquetas únicas encontradas en la segmentación.
     """
+
+    #TODO: Fijarse las fechas de las imágenes en head de DICOM
     data = []
 
     for hospital in os.listdir(base_path):
@@ -98,11 +100,12 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
 def merge_with_labels(dataset_csv, labels_csv, output_csv):
     """
     Une el dataset con las columnas PFS_6m y OS_12m del archivo labels_csv.
-    Guarda el resultado en un csv.
+    Guarda el resultado en un csv solo si CHECK es OK.
+    Además, guarda una lista de sujetos del dataset que no están en df_labels.
     """
-    # Revisar si hay sujetos repetidos en df_dataset
+
     df_dataset = pd.read_csv(dataset_csv)
-    df_labels = pd.read_csv(labels_csv)
+    df_labels = pd.read_csv(labels_csv, delimiter=";")
 
     duplicados = df_dataset['subject'][df_dataset['subject'].duplicated()]
     if not duplicados.empty:
@@ -111,18 +114,34 @@ def merge_with_labels(dataset_csv, labels_csv, output_csv):
     else:
         print("No hay sujetos repetidos en df_dataset.")
 
-    df_labels['record_id'] = df_labels['record_id'].str.replace('-', '_')
-    df_labels = df_labels[['record_id', 'PFS_6m', 'OS_12m']]
+    df_labels['case_id'] = df_labels['case_id'].str.replace('-', '_')
+    df_labels = df_labels[['case_id', 'PFS_6m', 'OS_12m', 'CHECK']]
 
-    merged = df_dataset.merge(df_labels, left_on='subject', right_on='record_id', how='left')
+    # Lista de sujetos en dataset que no están en df_labels
+    missing_subjects = sorted(set(df_dataset['subject']) - set(df_labels['case_id']))
+    if missing_subjects:
+        with open(output_csv.replace('.csv', '_missing_subjects.txt'), 'w') as f:
+            for subj in missing_subjects:
+                f.write(f"{subj}\n")
+        print(f"Lista de sujetos no presentes en labels guardada en: {output_csv.replace('.csv', '_missing_subjects.txt')}")
+    else:
+        print("Todos los sujetos del dataset están presentes en df_labels.")
+
+    merged = df_dataset.merge(df_labels, left_on='subject', right_on='case_id', how='left')
 
     columnas = ["hospital", "subject", "Image", "Mask", "Labels", "PFS_6m", "OS_12m"]
-    merged = merged[columnas]
+    merged = merged[columnas + ['CHECK']]
 
     merged = merged.fillna('')
 
+    # Filtra solo los registros donde CHECK es 'OK'
+    merged = merged[merged['CHECK'] == 'OK']
+
     for col in ["PFS_6m", "OS_12m"]:
-        merged[col] = merged[col].apply(lambda x: int(float(x)) if str(x).strip() != '' else '')
+        merged[col] = merged[col].apply(lambda x: int(float(x)) if str(x).strip() != '' else '' )
+
+    # Elimina la columna CHECK antes de guardar
+    merged = merged[columnas]
 
     with open(output_csv, mode='w', newline='') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=columnas)
@@ -161,15 +180,75 @@ def save_stratified_folds(input_csv):
                 writer.writerows(df_folds[fieldnames].to_dict(orient='records'))
             print(f"Archivo CSV combinado guardado en: {output_csv}")
 
+def merge_labels_with_radiomics(input_csv, radiomics_csv, output_csv, label_cols=['PFS_6m', 'OS_12m']):
+    """
+    Une el dataset de radiomics con las columnas PFS_6m y OS_12m del archivo labels_csv.
+    Guarda el resultado en un csv.
+    """
+
+    df_radiomics = pd.read_csv(radiomics_csv, delimiter=",", quotechar='"')
+    df_labels = pd.read_csv(input_csv)
+
+    print(df_radiomics.columns)
+
+    # Si el DataFrame tiene un MultiIndex, resetea el índice y renombra las columnas correctamente
+    if isinstance(df_radiomics.index, pd.MultiIndex):
+        df_radiomics = df_radiomics.reset_index()
+
+    # Si las primeras columnas del DataFrame son el índice reseteado, asígnales los nombres correctos
+    # Solo si los nombres actuales son diferentes a los esperados
+    expected_names = ['hospital', 'subject', 'Image', 'Mask']
+    current_names = list(df_radiomics.columns[:4])
+    if all(str(col).startswith('level_') or str(col) == '' for col in current_names):
+        rename_dict = {df_radiomics.columns[i]: expected_names[i] for i in range(4)}
+        df_radiomics = df_radiomics.rename(columns=rename_dict)
+
+    df_labels['subject'] = df_labels['subject'].astype(str)#.str.strip()
+    df_radiomics['subject'] = df_radiomics['subject'].astype(str)#.str.strip()
+
+    merged = pd.merge(df_radiomics, df_labels, on='subject', how='left', suffixes=('', '_radiomics'))
+
+    print(merged.head(10))
+
+    for col in label_cols:
+        if col in merged.columns:
+            merged[col] = merged[col].apply(lambda x: int(float(x)) if str(x).strip() != '' and not pd.isna(x) else '')
+        else:
+            print(f"Warning: La columna '{col}' no existe en el DataFrame y no será procesada.")
+    
+    print(f"Total registros en el dataset combinado: {len(merged)}")
+
+    csv_OS_12m = output_csv.replace('.csv', '_OS_12m.csv')
+    merged_OS_12m = merged[merged['OS_12m_radiomics'].notna() & (merged['OS_12m_radiomics'] != '')].copy()
+    print(f"Total registros con OS_12m: {len(merged_OS_12m)}")
+    merged_OS_12m['Label'] = merged_OS_12m['OS_12m_radiomics'].astype(int)
+    cols_to_drop_os = [col for col in merged_OS_12m.columns if col.endswith('_radiomics')] + ['PFS_6m', 'OS_12m']
+    merged_OS_12m.drop(columns=cols_to_drop_os, inplace=True, errors='ignore')
+
+    csv_PFS_6m = output_csv.replace('.csv', '_PFS_6m.csv')
+    merged_PFS_6m = merged[merged['PFS_6m_radiomics'].notna() & (merged['PFS_6m_radiomics'] != '')].copy()
+    print(f"Total registros con PFS_6m: {len(merged_PFS_6m)}")
+    merged_PFS_6m['Label'] = merged_PFS_6m['PFS_6m_radiomics'].astype(int)
+    cols_to_drop_pfs = [col for col in merged_PFS_6m.columns if col.endswith('_radiomics')] + ['PFS_6m', 'OS_12m']
+    merged_PFS_6m.drop(columns=cols_to_drop_pfs, inplace=True, errors='ignore')
+
+    merged.to_csv(output_csv, index=False)
+    merged_OS_12m.to_csv(csv_OS_12m, index=False)
+    merged_PFS_6m.to_csv(csv_PFS_6m, index=False)
+    print(f"Archivo CSV combinado guardado en: {output_csv}")
 
 
-# ingenio_dataset()
-# merge_with_labels(dataset_csv=".\\data\\ingenio_dataset_cleanBASAL.csv", 
-#                   labels_csv="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\csv\\output\\INGENIO_output_2025-05-21.csv", 
-#                   output_csv=".\\data\\ingenio_dataset_cleanBASAL_labels.csv")
-# save_stratified_folds(input_csv="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL_labels.csv")
-get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\ingenio_dataset_cleanBASAL.csv",
-                    outPath="C:\\dev\\LungCancerRadiomics\\data\\ingenio_radiomics_cleanBASAL.csv", 
-                    progress_filename="C:\\dev\\LungCancerRadiomics\\data\\radiomics_log.txt",
-                    params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml",
-                    start_index=230)
+if __name__ == "__main__":
+    ingenio_dataset()
+    merge_with_labels(dataset_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL.csv", 
+                    labels_csv=".\\data\\INGENIO\\INGENIO_output_2025-07-01_clean.csv", 
+                    output_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv")
+    save_stratified_folds(input_csv="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv")
+    get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv",
+                        outPath="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_radiomics_cleanBASAL.csv", 
+                        progress_filename="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\radiomics_log.txt",
+                        params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml",
+                        start_index=0)
+    merge_labels_with_radiomics(input_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv",
+                                radiomics_csv=".\\data\\INGENIO\\ingenio_radiomics_cleanBASAL.csv",
+                                output_csv=".\\data\\INGENIO\\ingenio_radiomics_cleanBASAL_labels.csv")

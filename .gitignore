@@ -10,4 +10,5 @@ data/trained_models
 *.csv
 *.xlsx
 /data/RIDERLungCT
-src/LUNA25.py
+/data/INGENIO/trained_models
+data/radiomics.csv

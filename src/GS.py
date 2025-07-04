@@ -14,7 +14,7 @@ def GS(feature_selection_method, model_function, hyperparameter_grid, out_path='
     - outPath: Ruta base para los archivos de entrada y salida.
     """
     inputCSV = os.path.join(out_path, 'radiomics.csv')
-    outputRadiomicsFilepath = os.path.join(out_path, 'radiomics_features_nodule_patch.csv')
+    outputRadiomicsFilepath = os.path.join(out_path, 'ingenio_radiomics_cleanBASAL_labels_PFS_6m.csv')
     outputFilteringFilepath = os.path.join(out_path, 'correlation_log.txt')
     outputSelectionFilepath = os.path.join(out_path, 'feature_selection_log.txt')
     outputModelFilepath = os.path.join(out_path, 'trained_models')
@@ -111,5 +111,6 @@ if __name__ == "__main__":
     hyperparameter_grid = json.loads(args.hyperparameters)
 
     _,split_csv = read_csv(args.split_csv_path) if args.split_csv_path else None
+    split_csv = split_csv.drop(columns=['Image', 'Mask', 'Labels'], errors='ignore')
 
     GS(feature_selection_method=feature_selection_method, model_function=model_function, hyperparameter_grid=hyperparameter_grid, out_path=args.out_path, split_csv=split_csv)

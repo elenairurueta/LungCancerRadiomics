@@ -115,7 +115,7 @@ def get_batch_radiomics(inputCSV, outPath, progress_filename, params, start_inde
                         write_headers = True
 
                     with open(outPath, 'a') as outputFile:
-                        writer = csv.writer(outputFile, lineterminator='\n')
+                        writer = csv.writer(outputFile) ####lineterminator='\n'
                         if headers is None:
                             headers = list(featureVector.keys())
                         if write_headers:

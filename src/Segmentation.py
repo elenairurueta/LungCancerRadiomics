@@ -23,5 +23,3 @@ def modify_segmentation(input_path, output_path, label_to_change=2, new_label=0)
     sitk.WriteImage(modified_segmentation, output_path)
 
     print(f"Segmentación modificada guardada en: {output_path}")
-
-modify_segmentation("\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD\\HUVH\\HUVH_036\\INGENIO_HUVH_036_TH_CT_seg.nrrd", "..\\INGENIO_HUVH_036_TH_CT_seg.nrrd", label_to_change=2, new_label=1)

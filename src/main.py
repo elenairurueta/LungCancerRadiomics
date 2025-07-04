@@ -36,15 +36,17 @@ def main():
     
     if args.radiomics_file:
         _, features = read_csv(args.radiomics_file)
-        features.drop(columns=['PatientID','StudyDate','CoordX','CoordY','CoordZ','LesionID','NoduleID','Age_at_StudyDate','Gender','SPLIT','TimeStep','FOLD','image','mask'], inplace=True, errors='ignore')
     elif args.input_file:
         from Radiomics import get_batch_radiomics
         features = get_batch_radiomics(args.input_file, outPath=os.path.join(args.output_folder, 'radiomics_features.csv'), progress_filename=os.path.join(args.output_folder, 'radiomics_log.txt'), params=args.params_file)
     else:
         features = None
 
+    print(f"Forma de las características originales: {features.shape}")
+
     if args.split_file:
         _, split_csv = read_csv(args.split_file)
+        split_csv = split_csv.drop(columns=['Image', 'Mask', 'Labels'], errors='ignore')
     else:
         split_csv = None
     if args.correlation_method == 'pearson':
@@ -54,7 +56,7 @@ def main():
         filtered_features = features
     
     print(f"Forma de las características filtradas: {filtered_features.shape}")
-
+    
     if args.feature_selection == 'anova':
         from Statistics import anova_feature_selection
         selected_features = anova_feature_selection(filtered_features, outPath=os.path.join(args.output_folder, 'feature_selection_anova_log.txt'), k=args.k)
@@ -88,22 +90,22 @@ def main():
 
     if args.model == 'svm':
         from Model import model_svm
-        model = model_svm(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_SVM_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_svm(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_SVM_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'random_forest':
         from Model import model_random_forest
-        scores = model_random_forest(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_RF_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_random_forest(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_RF_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'xgboost':
         from Model import model_xgboost
-        scores = model_xgboost(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_XGB_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_xgboost(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_XGB_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'bagging':
         from Model import model_bagging
-        scores = model_bagging(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_BAG_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_bagging(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_BAG_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'nnet':
         from Model import model_nnet
-        scores = model_nnet(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_NNET_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_nnet(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_NNET_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'kNN':   
         from Model import model_knn
-        scores = model_knn(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_kNN_training_log.txt'), **model_params, split_csv=split_csv)
+        avg_scores, std_scores = model_knn(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_kNN_training_log.txt'), **model_params, split_csv=split_csv)
     elif args.model == 'lazy':
         from Model import lazy_classifier
         models, predicts = lazy_classifier(selected_features, outPath_model=os.path.join(args.output_folder, 'models'), outPath_log=os.path.join(args.output_folder, 'model_LAZY_training_log.txt'), split_csv=split_csv)
@@ -111,9 +113,9 @@ def main():
         raise NotImplementedError("Modelo no implementado.")
 
     if args.model != 'lazy':
-        filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
-        avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
-        std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
+        # filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
+        # avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
+        # std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
         
         for metric in avg_scores:
             print(f"{metric}: {avg_scores[metric]:.4f} ± {std_scores[metric]:.4f}")
