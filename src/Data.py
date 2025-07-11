@@ -53,7 +53,6 @@ def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\D
     - 'Labels': Lista de etiquetas únicas encontradas en la segmentación.
     """
 
-    #TODO: Fijarse las fechas de las imágenes en head de DICOM
     data = []
 
     for hospital in os.listdir(base_path):
@@ -117,16 +116,6 @@ def merge_with_labels(dataset_csv, labels_csv, output_csv):
     df_labels['case_id'] = df_labels['case_id'].str.replace('-', '_')
     df_labels = df_labels[['case_id', 'PFS_6m', 'OS_12m', 'CHECK']]
 
-    # Lista de sujetos en dataset que no están en df_labels
-    missing_subjects = sorted(set(df_dataset['subject']) - set(df_labels['case_id']))
-    if missing_subjects:
-        with open(output_csv.replace('.csv', '_missing_subjects.txt'), 'w') as f:
-            for subj in missing_subjects:
-                f.write(f"{subj}\n")
-        print(f"Lista de sujetos no presentes en labels guardada en: {output_csv.replace('.csv', '_missing_subjects.txt')}")
-    else:
-        print("Todos los sujetos del dataset están presentes en df_labels.")
-
     merged = df_dataset.merge(df_labels, left_on='subject', right_on='case_id', how='left')
 
     columnas = ["hospital", "subject", "Image", "Mask", "Labels", "PFS_6m", "OS_12m"]
@@ -134,13 +123,11 @@ def merge_with_labels(dataset_csv, labels_csv, output_csv):
 
     merged = merged.fillna('')
 
-    # Filtra solo los registros donde CHECK es 'OK'
     merged = merged[merged['CHECK'] == 'OK']
 
     for col in ["PFS_6m", "OS_12m"]:
         merged[col] = merged[col].apply(lambda x: int(float(x)) if str(x).strip() != '' else '' )
 
-    # Elimina la columna CHECK antes de guardar
     merged = merged[columnas]
 
     with open(output_csv, mode='w', newline='') as csv_file:
@@ -148,6 +135,21 @@ def merge_with_labels(dataset_csv, labels_csv, output_csv):
         writer.writeheader()
         writer.writerows(merged.to_dict(orient='records'))
     print(f"Archivo CSV combinado guardado en: {output_csv}")
+
+    invalid_labels = set(
+        merged[
+            (~merged['PFS_6m'].isin([0, 1])) & (~merged['OS_12m'].isin([0, 1]))
+        ]['subject'].unique()
+    )
+
+    if invalid_labels:
+        txt_path = output_csv.replace('.csv', '_invalid_labels.txt')
+        with open(txt_path, 'w') as f:
+            for subj in sorted(invalid_labels):
+                f.write(f"{subj}\n")
+        print(f"Lista de sujetos con etiquetas inválidas guardada en: {txt_path}")
+    else:
+        print("Todos los sujetos tienen valores válidos en PFS_6m u OS_12m.")
 
 def save_stratified_folds(input_csv):
     """
@@ -191,12 +193,10 @@ def merge_labels_with_radiomics(input_csv, radiomics_csv, output_csv, label_cols
 
     print(df_radiomics.columns)
 
-    # Si el DataFrame tiene un MultiIndex, resetea el índice y renombra las columnas correctamente
     if isinstance(df_radiomics.index, pd.MultiIndex):
         df_radiomics = df_radiomics.reset_index()
 
-    # Si las primeras columnas del DataFrame son el índice reseteado, asígnales los nombres correctos
-    # Solo si los nombres actuales son diferentes a los esperados
+
     expected_names = ['hospital', 'subject', 'Image', 'Mask']
     current_names = list(df_radiomics.columns[:4])
     if all(str(col).startswith('level_') or str(col) == '' for col in current_names):

@@ -220,7 +220,7 @@ def pca_feature_selection(features, k=10, outPath=''):
 
     return pd.concat([pca_df, features[exclude_columns]], axis=1)
 
-def lasso_feature_selection(features, k=10, alpha = 0.001, outPath=''):
+def lasso_feature_selection(features, k=10, alpha = 10, outPath=''):
     """
     Selecciona las K características principales utilizando Lasso para la selección de características.
     
