@@ -112,11 +112,7 @@ def main():
     else:
         raise NotImplementedError("Modelo no implementado.")
 
-    if args.model != 'lazy':
-        # filtered_scores = {metric: values for metric, values in scores.items() if metric not in ['estimator', 'fit_time', 'score_time']}    
-        # avg_scores = {metric: np.mean(values) for metric, values in filtered_scores.items()}
-        # std_scores = {metric: np.std(values) for metric, values in filtered_scores.items()}
-        
+    if args.model != 'lazy':        
         for metric in avg_scores:
             print(f"{metric}: {avg_scores[metric]:.4f} ± {std_scores[metric]:.4f}")
     else:

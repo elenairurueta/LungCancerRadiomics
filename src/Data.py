@@ -36,8 +36,8 @@ def split_by_fold(data, fold_column='FOLD', current_fold=1):
 
     return train_data.drop(columns=fold_column), val_data.drop(columns=fold_column)
 
-def ingenio_dataset(base_path="\\\\10.5.38.120\\BIT-UPM-projects\\INGENIO-RAD\\DATA\\cleanData\\NRRD", 
-                    output_csv=".\\data\\ingenio_dataset.csv"):
+def ingenio_dataset(base_path, 
+                    output_csv):
     """
     Genera un archivo CSV con las rutas de las imágenes y segmentaciones en formato .nrrd.
 
@@ -236,19 +236,3 @@ def merge_labels_with_radiomics(input_csv, radiomics_csv, output_csv, label_cols
     merged_OS_12m.to_csv(csv_OS_12m, index=False)
     merged_PFS_6m.to_csv(csv_PFS_6m, index=False)
     print(f"Archivo CSV combinado guardado en: {output_csv}")
-
-
-if __name__ == "__main__":
-    ingenio_dataset()
-    merge_with_labels(dataset_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL.csv", 
-                    labels_csv=".\\data\\INGENIO\\INGENIO_output_2025-07-01_clean.csv", 
-                    output_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv")
-    save_stratified_folds(input_csv="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv")
-    get_batch_radiomics(inputCSV="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv",
-                        outPath="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\ingenio_radiomics_cleanBASAL.csv", 
-                        progress_filename="C:\\dev\\LungCancerRadiomics\\data\\INGENIO\\radiomics_log.txt",
-                        params="C:\\dev\\LungCancerRadiomics\\data\\Params.yaml",
-                        start_index=0)
-    merge_labels_with_radiomics(input_csv=".\\data\\INGENIO\\ingenio_dataset_cleanBASAL_labels.csv",
-                                radiomics_csv=".\\data\\INGENIO\\ingenio_radiomics_cleanBASAL.csv",
-                                output_csv=".\\data\\INGENIO\\ingenio_radiomics_cleanBASAL_labels.csv")

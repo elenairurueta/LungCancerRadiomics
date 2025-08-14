@@ -3,7 +3,7 @@ from Statistics import pearson_correlation
 from Data import read_csv
 
 
-def GS(feature_selection_method, model_function, hyperparameter_grid, out_path='C:\\dev\\LungCancerRadiomics\\data', split_csv=None):
+def GS(feature_selection_method, model_function, hyperparameter_grid, out_path, split_csv=None):
     """
     Función genérica para realizar Grid Search.
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--feature_selection", type=str, required=True, help="Feature selection method (e.g., 'pca').")
     parser.add_argument("--model", type=str, required=True, help="Model to train (e.g., 'random_forest').")
     parser.add_argument("--hyperparameters", type=str, required=True, help="Hyperparameter grid as a JSON string.")
-    parser.add_argument("--out_path", type=str, default="C:\\dev\\LungCancerRadiomics\\data", help="Output path for files.")
+    parser.add_argument("--out_path", type=str, default="..\\data", help="Output path for files.")
     parser.add_argument("--split_csv_path", type=str, default=None, help="Path to CSV file for splitting data.", required=False)
 
     args = parser.parse_args()

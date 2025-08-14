@@ -9,7 +9,7 @@ def nodules_locations():
     """
     rows = []
     #BENIGNOS
-    path = "//10.5.38.120/BIT-UPM-projects/NODULES/SCRATCH_STUDENTS/FJD_Screening/markups/benign"
+    path = ""
     for patient in os.listdir(path):
         patient_path = os.path.join(path, patient)
         if os.path.isdir(patient_path):
@@ -34,7 +34,7 @@ def nodules_locations():
                                 'Label': 0
                             })
     #MALIGNOS
-    path = "//10.5.38.120/BIT-UPM-projects/NODULES/SCRATCH_STUDENTS/FJD_Screening/markups/malignant"
+    path = ""
     for patient in os.listdir(path):
         patient_path = os.path.join(path, patient)
         if os.path.isdir(patient_path):
@@ -154,7 +154,6 @@ def estadisticas_tac():
 def check_folder_files(root_folder, extension):
     """
     Revisa si en cada subcarpeta de root_folder todos los archivos tienen la extensión indicada.
-    Imprime advertencias en español si hay archivos no válidos o subcarpetas vacías.
     """
     all_ok = True
     for subdir, dirs, files in os.walk(root_folder):
